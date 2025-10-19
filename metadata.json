@@ -1,0 +1,5 @@
+{
+  "name": "UI-JSON Visualizer",
+  "description": "A web application to visually create and preview user interfaces for multi-platform applications using a declarative JSON-based language. Edit the JSON on the left and see the live preview on the right.",
+  "requestFramePermissions": []
+}
