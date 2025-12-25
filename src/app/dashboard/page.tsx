@@ -551,6 +551,11 @@ export default function DashboardPage() {
                     </button>
                 </div>
                 <div className="flex items-center gap-1 border-l pl-3 ml-1">
+                    <Link href="/dashboard/databases" title="Database Connections">
+                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <Database size={20} />
+                        </button>
+                    </Link>
                     <Link href="/admin" title="Admin Panel">
                         <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <Settings size={20} />

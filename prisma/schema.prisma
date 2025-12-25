@@ -26,9 +26,10 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  accounts      Account[]
-  sessions      Session[]
-  apps          App[]     // Apps created by user
+  accounts           Account[]
+  sessions           Session[]
+  apps               App[]                // Apps created by user
+  databaseConnections DatabaseConnection[] // Database connections owned by user
 
   @@map("users")
 }
@@ -84,7 +85,12 @@ model App {
   isPublic    Boolean  @default(false)
   version     String   @default("1.0.0")
 
-  // Database state for this app
+  // Database configuration
+  useLocalStorage      Boolean            @default(true)
+  databaseConnectionId String?
+  databaseConnection   DatabaseConnection? @relation(fields: [databaseConnectionId], references: [id], onDelete: SetNull)
+
+  // Database state for this app (usado quando useLocalStorage = true)
   databaseData Json?    // Stores the dynamic database content
 
   // Ownership
@@ -95,5 +101,44 @@ model App {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+  @@index([databaseConnectionId])
   @@map("apps")
+}
+
+// ============================================
+// Database Connection Models
+// ============================================
+
+model DatabaseConnection {
+  id          String   @id @default(cuid())
+  name        String   // "Production DB", "Staging DB"
+
+  // Connection details
+  type        String   @default("postgresql") // postgresql, mysql, mongodb
+  host        String
+  port        Int      @default(5432)
+  database    String
+  username    String
+  password    String   // encrypted with AES-256!
+  ssl         Boolean  @default(false)
+
+  // Status
+  isActive    Boolean  @default(true)
+  lastTestedAt DateTime?
+  lastTestStatus String? // "success", "failed"
+  lastTestError  String?
+
+  // Ownership
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Apps using this connection
+  apps        App[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("database_connections")
 }
