@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getUsageMetrics, getUserPlanDetails } from '@/actions/subscriptions'
 import { AlertTriangle, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 interface UsageStats {
   apps: { current: number; limit: number; percentage: number }
@@ -15,6 +16,7 @@ export function UsageIndicator() {
   const [stats, setStats] = useState<UsageStats | null>(null)
   const [planTier, setPlanTier] = useState<string>('FREE')
   const [loading, setLoading] = useState(true)
+  const { track } = useAnalytics()
 
   useEffect(() => {
     async function loadStats() {
@@ -35,6 +37,30 @@ export function UsageIndicator() {
 
     loadStats()
   }, [])
+
+  // Track usage warnings
+  useEffect(() => {
+    if (!stats || planTier !== 'FREE') return
+
+    // Track warnings at 80%+ usage
+    if (stats.apps.percentage >= 80 && stats.apps.limit !== -1) {
+      track.trackUsageWarningShown({
+        limitType: 'apps',
+        percentage: stats.apps.percentage,
+        current: stats.apps.current,
+        max: stats.apps.limit,
+      })
+    }
+
+    if (stats.exports.percentage >= 80 && stats.exports.limit !== -1) {
+      track.trackUsageWarningShown({
+        limitType: 'exports',
+        percentage: stats.exports.percentage,
+        current: stats.exports.current,
+        max: stats.exports.limit,
+      })
+    }
+  }, [stats, planTier, track])
 
   if (loading) {
     return (
@@ -100,7 +126,17 @@ export function UsageIndicator() {
               <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-0.5" />
               <span>
                 You're close to your limit.{' '}
-                <Link href="/pricing" className="underline font-medium">
+                <Link
+                  href="/pricing"
+                  className="underline font-medium"
+                  onClick={() => {
+                    track.trackUpgradeButtonClicked({
+                      location: 'usage_indicator',
+                      targetPlan: 'PRO',
+                      currentPlan: planTier,
+                    })
+                  }}
+                >
                   Upgrade to Pro
                 </Link>{' '}
                 for unlimited apps.
@@ -134,7 +170,17 @@ export function UsageIndicator() {
           {stats.builds.limit === 0 && planTier === 'FREE' && (
             <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 p-2 rounded">
               Mobile builds not available on Free plan.{' '}
-              <Link href="/pricing" className="underline font-medium text-blue-600 dark:text-blue-400">
+              <Link
+                href="/pricing"
+                className="underline font-medium text-blue-600 dark:text-blue-400"
+                onClick={() => {
+                  track.trackUpgradeButtonClicked({
+                    location: 'usage_indicator',
+                    targetPlan: 'PRO',
+                    currentPlan: planTier,
+                  })
+                }}
+              >
                 Upgrade
               </Link>
             </div>
@@ -170,6 +216,13 @@ export function UsageIndicator() {
           <Link
             href="/pricing"
             className="block w-full text-center py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition text-sm"
+            onClick={() => {
+              track.trackUpgradeButtonClicked({
+                location: 'usage_indicator',
+                targetPlan: 'PRO',
+                currentPlan: planTier,
+              })
+            }}
           >
             Upgrade to Pro for Unlimited
           </Link>

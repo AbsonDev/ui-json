@@ -38,6 +38,7 @@ model User {
   subscriptions      Subscription[]       // User subscriptions
   usageMetrics       UsageMetric[]        // Usage tracking
   invoices           Invoice[]            // Billing invoices
+  emailLogs          EmailLog[]           // Email communication logs
 
   @@index([email, isAdmin]) // Composite index for admin queries
   @@index([createdAt]) // Index for sorting by creation date
@@ -396,4 +397,24 @@ model PlanConfig {
   updatedAt           DateTime @updatedAt
 
   @@map("plan_configs")
+}
+
+// ============================================
+// Email Tracking
+// ============================================
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  userId      String
+  emailType   String   // e.g., "trial_day_1", "trial_day_4", etc.
+  subject     String
+  sentAt      DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([emailType])
+  @@index([userId, emailType])
+  @@index([sentAt])
+  @@map("email_logs")
 }

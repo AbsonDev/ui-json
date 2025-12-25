@@ -1,12 +1,15 @@
 'use client'
 
+import { useEffect } from 'react'
 import { X, Sparkles, Zap } from 'lucide-react'
 import Link from 'next/link'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 interface PaywallProps {
   feature: string
   description: string
   requiredPlan?: 'PRO' | 'TEAM'
+  currentPlan?: string
   onClose?: () => void
 }
 
@@ -14,8 +17,19 @@ export function Paywall({
   feature,
   description,
   requiredPlan = 'PRO',
+  currentPlan = 'FREE',
   onClose
 }: PaywallProps) {
+  const { track } = useAnalytics()
+
+  // Track paywall display
+  useEffect(() => {
+    track.trackPaywallDisplayed({
+      feature,
+      requiredPlan,
+      currentPlan,
+    })
+  }, [feature, requiredPlan, currentPlan, track])
   const planDetails = {
     PRO: {
       name: 'Pro',
@@ -55,7 +69,10 @@ export function Paywall({
       <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-8 relative shadow-2xl animate-in zoom-in duration-200">
         {onClose && (
           <button
-            onClick={onClose}
+            onClick={() => {
+              track.trackPaywallDismissed(feature)
+              onClose()
+            }}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
           >
             <X className="w-5 h-5" />
@@ -101,6 +118,9 @@ export function Paywall({
         <div className="space-y-3">
           <Link
             href="/pricing"
+            onClick={() => {
+              track.trackPaywallCTAClicked(feature, requiredPlan)
+            }}
             className={`block w-full bg-${plan.color}-600 text-white text-center py-3 rounded-lg font-medium hover:bg-${plan.color}-700 transition shadow-md hover:shadow-lg`}
           >
             View All Plans
@@ -108,7 +128,10 @@ export function Paywall({
 
           {onClose && (
             <button
-              onClick={onClose}
+              onClick={() => {
+                track.trackPaywallDismissed(feature)
+                onClose()
+              }}
               className="block w-full text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 py-2 transition"
             >
               Maybe Later
