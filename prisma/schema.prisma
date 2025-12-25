@@ -30,6 +30,7 @@ model User {
   sessions           Session[]
   apps               App[]                // Apps created by user
   databaseConnections DatabaseConnection[] // Database connections owned by user
+  files              File[]               // Files uploaded by user (admin)
 
   @@map("users")
 }
@@ -105,6 +106,9 @@ model App {
 
   // App Users (authentication for end users)
   appUsers    AppUser[]
+
+  // File Storage
+  files       File[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -286,6 +290,9 @@ model AppUser {
   // Data owned by this user
   entityData    EntityData[]
 
+  // Files owned by this user
+  files         File[]
+
   // Metadata
   metadata      Json?    // Custom user data (profile fields, preferences, etc.)
 
@@ -320,4 +327,53 @@ model AppSession {
   @@index([token])
   @@index([expiresAt])
   @@map("app_sessions")
+}
+
+// ============================================
+// File Storage Models
+// ============================================
+
+model File {
+  id            String   @id @default(cuid())
+
+  // File metadata
+  originalName  String   // Original filename uploaded by user
+  filename      String   // Stored filename (unique)
+  mimeType      String   // image/jpeg, application/pdf, etc.
+  size          Int      // File size in bytes
+  path          String   // Relative path in storage
+  url           String   // Public URL to access file
+
+  // Thumbnail (for images)
+  thumbnailPath String?  // Path to thumbnail
+  thumbnailUrl  String?  // URL to thumbnail
+
+  // Image metadata (if applicable)
+  width         Int?     // Image width in pixels
+  height        Int?     // Image height in pixels
+
+  // Permissions
+  isPublic      Boolean  @default(false) // If true, anyone can access without auth
+
+  // Ownership
+  appId         String
+  app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Optional: owned by app user
+  appUserId     String?
+  appUser       AppUser? @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  // Optional: owned by platform user (admin)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([appId])
+  @@index([appUserId])
+  @@index([userId])
+  @@index([mimeType])
+  @@index([isPublic])
+  @@map("files")
 }

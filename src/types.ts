@@ -524,3 +524,125 @@ export interface ResetPasswordRequest {
 export interface VerifyEmailRequest {
   token: string;
 }
+
+// ============================================
+// File Storage Types
+// ============================================
+
+export interface File {
+  id: string;
+  originalName: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  path: string;
+  url: string;
+  thumbnailPath?: string | null;
+  thumbnailUrl?: string | null;
+  width?: number | null;
+  height?: number | null;
+  isPublic: boolean;
+  appId: string;
+  appUserId?: string | null;
+  userId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface FileResponse {
+  id: string;
+  originalName: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  thumbnailUrl?: string | null;
+  width?: number | null;
+  height?: number | null;
+  isPublic: boolean;
+  appUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UploadFileRequest {
+  isPublic?: boolean;
+}
+
+export interface UploadFileResponse {
+  success: boolean;
+  file?: FileResponse;
+  error?: string;
+}
+
+export interface ListFilesRequest {
+  limit?: number;
+  offset?: number;
+  mimeType?: string; // Filter by mime type (e.g., "image/*")
+  appUserId?: string; // Filter by app user (admin only)
+}
+
+export interface FileQuota {
+  used: number;      // Bytes used
+  limit: number;     // Bytes limit
+  count: number;     // Number of files
+  countLimit: number; // Max number of files
+}
+
+export interface FileQuotaResponse {
+  success: boolean;
+  quota?: FileQuota;
+  error?: string;
+}
+
+// Allowed file types and limits
+export const FILE_UPLOAD_CONFIG = {
+  // Max file size: 10MB
+  MAX_FILE_SIZE: 10 * 1024 * 1024,
+
+  // Max total storage per app user: 100MB
+  MAX_STORAGE_PER_USER: 100 * 1024 * 1024,
+
+  // Max files per app user: 100
+  MAX_FILES_PER_USER: 100,
+
+  // Allowed mime types
+  ALLOWED_MIME_TYPES: [
+    // Images
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+
+    // Documents
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
+    // Audio
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/wav',
+    'audio/ogg',
+
+    // Video
+    'video/mp4',
+    'video/mpeg',
+    'video/webm',
+    'video/quicktime',
+
+    // Archives
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/x-rar-compressed',
+  ],
+
+  // Thumbnail settings
+  THUMBNAIL_WIDTH: 200,
+  THUMBNAIL_HEIGHT: 200,
+  THUMBNAIL_QUALITY: 80,
+} as const;
