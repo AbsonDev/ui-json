@@ -5,6 +5,12 @@ import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 import { logError } from '@/lib/logger'
 import { PlanTier } from '@prisma/client'
+import {
+  identifyUser,
+  trackEvent,
+  trackRevenue,
+  setUserProperties
+} from '@/lib/analytics/config'
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -73,12 +79,33 @@ export async function POST(req: NextRequest) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
+  const planTier = session.metadata?.planTier
 
   if (!userId) {
     throw new Error('No userId in checkout session metadata')
   }
 
   console.log(`Checkout completed for user ${userId}`)
+
+  // Track checkout completion
+  if (planTier && session.amount_total) {
+    const interval = session.metadata?.interval || 'monthly'
+
+    trackEvent('Checkout_Completed', {
+      userId,
+      planTier,
+      interval,
+      amount: session.amount_total / 100, // Convert cents to dollars
+      customerId: session.customer as string,
+    })
+
+    // Track revenue
+    trackRevenue(session.amount_total / 100, {
+      planTier,
+      interval,
+    })
+  }
+
   // Subscription will be handled by subscription.created event
 }
 
@@ -125,6 +152,44 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     where: { id: userId },
     data: { planTier: planTier as PlanTier }
   })
+
+  // Track trial started if in trial period
+  if (status === 'TRIALING') {
+    trackEvent('Trial_Started', {
+      userId,
+      planTier,
+    })
+
+    setUserProperties({
+      planTier,
+      trialStartDate: subscription.trial_start
+        ? new Date(subscription.trial_start * 1000).toISOString()
+        : new Date().toISOString(),
+      isTrialing: true,
+    })
+  }
+
+  // Track subscription upgrade/activation
+  if (status === 'ACTIVE') {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { planTier: true }
+    })
+
+    if (user && user.planTier !== planTier) {
+      trackEvent('Subscription_Upgraded', {
+        userId,
+        fromPlan: user.planTier,
+        toPlan: planTier,
+        newAmount: (subscription.items.data[0].price.unit_amount || 0) / 100,
+      })
+    }
+
+    setUserProperties({
+      planTier,
+      isTrialing: false,
+    })
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -134,10 +199,35 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   })
 
   const userId = subscription.metadata?.userId
+  const planTier = subscription.metadata?.planTier
+
   if (userId) {
     await prisma.user.update({
       where: { id: userId },
       data: { planTier: 'FREE' }
+    })
+
+    // Track subscription cancellation
+    const subscriptionData = await prisma.subscription.findUnique({
+      where: { stripeSubscriptionId: subscription.id },
+      select: { createdAt: true }
+    })
+
+    const monthsSubscribed = subscriptionData
+      ? Math.floor(
+          (Date.now() - subscriptionData.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30)
+        )
+      : 0
+
+    trackEvent('Subscription_Canceled', {
+      userId,
+      planTier: planTier || 'UNKNOWN',
+      monthsSubscribed,
+    })
+
+    setUserProperties({
+      planTier: 'FREE',
+      canceledDate: new Date().toISOString(),
     })
   }
 }
@@ -187,6 +277,19 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   await prisma.invoice.update({
     where: { stripeInvoiceId: invoice.id },
     data: { status: 'UNCOLLECTIBLE' }
+  })
+
+  // Track payment failure
+  const subscription = await prisma.subscription.findFirst({
+    where: { userId },
+    select: { planTier: true }
+  })
+
+  trackEvent('Payment_Failed', {
+    userId,
+    planTier: subscription?.planTier || 'UNKNOWN',
+    amount: invoice.amount_due / 100,
+    reason: invoice.last_finalization_error?.message || 'Unknown',
   })
 
   // TODO: Send email notification to user
