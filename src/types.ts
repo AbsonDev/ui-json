@@ -333,6 +333,10 @@ export interface EntityField {
   sortable?: boolean;
 }
 
+// Permission types for entities
+export type EntityPermission = 'public' | 'authenticated' | 'owner' | 'admin';
+export type EntityWritePermission = 'authenticated' | 'owner' | 'admin';
+
 // Entity definition
 export interface Entity {
   id: string;
@@ -342,6 +346,9 @@ export interface Entity {
   fields: EntityField[];
   timestamps?: boolean;
   softDelete?: boolean;
+  readPermission?: EntityPermission;
+  writePermission?: EntityWritePermission;
+  deletePermission?: EntityWritePermission;
   appId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -365,6 +372,9 @@ export interface CreateEntityRequest {
   fields: EntityField[];
   timestamps?: boolean;
   softDelete?: boolean;
+  readPermission?: EntityPermission;
+  writePermission?: EntityWritePermission;
+  deletePermission?: EntityWritePermission;
 }
 
 export interface UpdateEntityRequest {
@@ -373,6 +383,9 @@ export interface UpdateEntityRequest {
   fields?: EntityField[];
   timestamps?: boolean;
   softDelete?: boolean;
+  readPermission?: EntityPermission;
+  writePermission?: EntityWritePermission;
+  deletePermission?: EntityWritePermission;
 }
 
 export interface CreateEntityDataRequest {
@@ -394,6 +407,7 @@ export interface QueryEntityDataRequest {
 export interface EntityDataResponse {
   id: string;
   data: Record<string, any>;
+  appUserId?: string; // Optional - set when data is owned by an app user
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -407,6 +421,9 @@ export interface EntityResponse {
   fields: EntityField[];
   timestamps: boolean;
   softDelete: boolean;
+  readPermission: EntityPermission;
+  writePermission: EntityWritePermission;
+  deletePermission: EntityWritePermission;
   recordCount?: number;
   createdAt: string;
   updatedAt: string;

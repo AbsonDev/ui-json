@@ -5,17 +5,23 @@ import {
   deleteEntityData,
   restoreEntityData,
 } from '@/actions/entity-data';
+import { getOptionalAuthContext } from '@/lib/auth-middleware';
 import type { UpdateEntityDataRequest } from '@/types';
 
 /**
  * GET /api/apps/[appId]/entities/[entityId]/data/[recordId]
  * Get a single data record
+ *
+ * Optional Headers:
+ * - Authorization: Bearer {app_user_token} (verifies ownership if data is user-specific)
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { appId: string; entityId: string; recordId: string } }
 ) {
   try {
+    // Note: getEntityDataById doesn't filter by user, it's for admin access
+    // For user-specific access control, use the list endpoint with filters
     const result = await getEntityDataById(params.recordId);
 
     if (!result.success) {
@@ -38,6 +44,9 @@ export async function GET(
 /**
  * PUT /api/apps/[appId]/entities/[entityId]/data/[recordId]
  * Update a data record
+ *
+ * Optional Headers:
+ * - Authorization: Bearer {app_user_token} (ensures user can only update their own data)
  */
 export async function PUT(
   request: NextRequest,
@@ -45,7 +54,12 @@ export async function PUT(
 ) {
   try {
     const body: UpdateEntityDataRequest = await request.json();
-    const result = await updateEntityData(params.recordId, body);
+
+    // Check if app user is authenticated (optional)
+    const authContext = await getOptionalAuthContext(request);
+    const appUserId = authContext?.userId;
+
+    const result = await updateEntityData(params.recordId, body, appUserId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -73,6 +87,9 @@ export async function PUT(
  *
  * Query params:
  * - hard: boolean (default false) - Force hard delete even if soft delete is enabled
+ *
+ * Optional Headers:
+ * - Authorization: Bearer {app_user_token} (ensures user can only delete their own data)
  */
 export async function DELETE(
   request: NextRequest,
@@ -82,7 +99,11 @@ export async function DELETE(
     const searchParams = request.nextUrl.searchParams;
     const hardDelete = searchParams.get('hard') === 'true';
 
-    const result = await deleteEntityData(params.recordId, hardDelete);
+    // Check if app user is authenticated (optional)
+    const authContext = await getOptionalAuthContext(request);
+    const appUserId = authContext?.userId;
+
+    const result = await deleteEntityData(params.recordId, hardDelete, appUserId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -109,6 +130,9 @@ export async function DELETE(
  * Restore a soft-deleted record
  *
  * Body: { action: "restore" }
+ *
+ * Optional Headers:
+ * - Authorization: Bearer {app_user_token} (ensures user can only restore their own data)
  */
 export async function PATCH(
   request: NextRequest,
@@ -118,7 +142,11 @@ export async function PATCH(
     const body = await request.json();
 
     if (body.action === 'restore') {
-      const result = await restoreEntityData(params.recordId);
+      // Check if app user is authenticated (optional)
+      const authContext = await getOptionalAuthContext(request);
+      const appUserId = authContext?.userId;
+
+      const result = await restoreEntityData(params.recordId, appUserId);
 
       if (!result.success) {
         return NextResponse.json(

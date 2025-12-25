@@ -42,6 +42,9 @@ const createEntitySchema = z.object({
   fields: z.array(entityFieldSchema).min(1, 'Entity must have at least one field'),
   timestamps: z.boolean().optional().default(true),
   softDelete: z.boolean().optional().default(false),
+  readPermission: z.enum(['public', 'authenticated', 'owner', 'admin']).optional().default('authenticated'),
+  writePermission: z.enum(['authenticated', 'owner', 'admin']).optional().default('owner'),
+  deletePermission: z.enum(['owner', 'admin']).optional().default('owner'),
 });
 
 const updateEntitySchema = z.object({
@@ -50,6 +53,9 @@ const updateEntitySchema = z.object({
   fields: z.array(entityFieldSchema).optional(),
   timestamps: z.boolean().optional(),
   softDelete: z.boolean().optional(),
+  readPermission: z.enum(['public', 'authenticated', 'owner', 'admin']).optional(),
+  writePermission: z.enum(['authenticated', 'owner', 'admin']).optional(),
+  deletePermission: z.enum(['owner', 'admin']).optional(),
 });
 
 // ============================================
@@ -65,6 +71,9 @@ function formatEntityResponse(entity: any): EntityResponse {
     fields: entity.fields as any,
     timestamps: entity.timestamps,
     softDelete: entity.softDelete,
+    readPermission: entity.readPermission || 'authenticated',
+    writePermission: entity.writePermission || 'owner',
+    deletePermission: entity.deletePermission || 'owner',
     recordCount: entity._count?.records,
     createdAt: entity.createdAt.toISOString(),
     updatedAt: entity.updatedAt.toISOString(),
@@ -224,6 +233,9 @@ export async function createEntity(appId: string, data: CreateEntityRequest) {
         fields: validated.fields as any,
         timestamps: validated.timestamps ?? true,
         softDelete: validated.softDelete ?? false,
+        readPermission: validated.readPermission ?? 'authenticated',
+        writePermission: validated.writePermission ?? 'owner',
+        deletePermission: validated.deletePermission ?? 'owner',
       },
       include: {
         _count: {
@@ -304,6 +316,9 @@ export async function updateEntity(entityId: string, data: UpdateEntityRequest) 
         fields: validated.fields as any,
         timestamps: validated.timestamps,
         softDelete: validated.softDelete,
+        readPermission: validated.readPermission,
+        writePermission: validated.writePermission,
+        deletePermission: validated.deletePermission,
       },
       include: {
         _count: {

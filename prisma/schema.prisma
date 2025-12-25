@@ -213,6 +213,15 @@ model Entity {
   timestamps  Boolean  @default(true) // Auto-add createdAt/updatedAt fields
   softDelete  Boolean  @default(false) // Add deletedAt field for soft deletes
 
+  // Permissions (access control for app users)
+  // "public" = anyone can read (no auth required)
+  // "authenticated" = only authenticated app users can read
+  // "owner" = only data owner can read (requires appUserId)
+  // "admin" = only app admin can read (via dashboard)
+  readPermission  String @default("authenticated") // public | authenticated | owner | admin
+  writePermission String @default("owner")          // authenticated | owner | admin
+  deletePermission String @default("owner")         // owner | admin
+
   // Relation to app
   appId       String
   app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
@@ -238,6 +247,10 @@ model EntityData {
   // Soft delete support
   deletedAt   DateTime?
 
+  // User ownership (optional - for user-specific data)
+  appUserId   String?
+  appUser     AppUser? @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
   // Relation to entity
   entityId    String
   entity      Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
@@ -247,6 +260,7 @@ model EntityData {
 
   @@index([entityId])
   @@index([deletedAt])
+  @@index([appUserId])
   @@map("entity_data")
 }
 
@@ -268,6 +282,9 @@ model AppUser {
 
   // Sessions for this user
   sessions      AppSession[]
+
+  // Data owned by this user
+  entityData    EntityData[]
 
   // Metadata
   metadata      Json?    // Custom user data (profile fields, preferences, etc.)

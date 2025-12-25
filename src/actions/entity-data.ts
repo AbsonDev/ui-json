@@ -20,6 +20,7 @@ function formatEntityDataResponse(record: any): EntityDataResponse {
   return {
     id: record.id,
     data: record.data as Record<string, any>,
+    appUserId: record.appUserId || undefined,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     deletedAt: record.deletedAt?.toISOString() || null,
@@ -177,8 +178,15 @@ function applyDefaults(data: Record<string, any>, fields: EntityField[]): Record
 
 /**
  * Get all data records for an entity with optional filtering and pagination
+ * @param entityId - The entity ID
+ * @param query - Optional query parameters
+ * @param appUserId - Optional app user ID to filter by (for end-user data isolation)
  */
-export async function getEntityData(entityId: string, query?: QueryEntityDataRequest) {
+export async function getEntityData(
+  entityId: string,
+  query?: QueryEntityDataRequest,
+  appUserId?: string
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -196,6 +204,11 @@ export async function getEntityData(entityId: string, query?: QueryEntityDataReq
     const where: any = { entityId };
     if (!includeDeleted) {
       where.deletedAt = null;
+    }
+
+    // Filter by app user if provided (for end-user data isolation)
+    if (appUserId) {
+      where.appUserId = appUserId;
     }
 
     // Get total count
@@ -277,8 +290,15 @@ export async function getEntityDataById(recordId: string) {
 
 /**
  * Create a new data record
+ * @param entityId - The entity ID
+ * @param request - The data to create
+ * @param appUserId - Optional app user ID to assign ownership (for end-user data)
  */
-export async function createEntityData(entityId: string, request: CreateEntityDataRequest) {
+export async function createEntityData(
+  entityId: string,
+  request: CreateEntityDataRequest,
+  appUserId?: string
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -302,18 +322,25 @@ export async function createEntityData(entityId: string, request: CreateEntityDa
       };
     }
 
-    // Check unique constraints
+    // Check unique constraints (scoped to appUser if provided)
     for (const field of fields) {
       if (field.unique && data[field.name] !== undefined) {
-        const existing = await prisma.entityData.findFirst({
-          where: {
-            entityId,
-            deletedAt: null,
-            data: {
-              path: [field.name],
-              equals: data[field.name],
-            },
+        const uniqueWhere: any = {
+          entityId,
+          deletedAt: null,
+          data: {
+            path: [field.name],
+            equals: data[field.name],
           },
+        };
+
+        // Scope uniqueness check to app user if provided
+        if (appUserId) {
+          uniqueWhere.appUserId = appUserId;
+        }
+
+        const existing = await prisma.entityData.findFirst({
+          where: uniqueWhere,
         });
 
         if (existing) {
@@ -325,11 +352,12 @@ export async function createEntityData(entityId: string, request: CreateEntityDa
       }
     }
 
-    // Create record
+    // Create record with optional app user ownership
     const record = await prisma.entityData.create({
       data: {
         entityId,
         data: data as any,
+        appUserId: appUserId || null,
       },
     });
 
@@ -348,8 +376,15 @@ export async function createEntityData(entityId: string, request: CreateEntityDa
 
 /**
  * Update a data record
+ * @param recordId - The record ID to update
+ * @param request - The data to update
+ * @param appUserId - Optional app user ID to verify ownership (prevents users from editing other users' data)
  */
-export async function updateEntityData(recordId: string, request: UpdateEntityDataRequest) {
+export async function updateEntityData(
+  recordId: string,
+  request: UpdateEntityDataRequest,
+  appUserId?: string
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -376,6 +411,11 @@ export async function updateEntityData(recordId: string, request: UpdateEntityDa
       return { success: false, error: 'Unauthorized' };
     }
 
+    // If appUserId is provided, verify that the record belongs to this app user
+    if (appUserId && record.appUserId !== appUserId) {
+      return { success: false, error: 'Unauthorized: You can only edit your own data' };
+    }
+
     const fields = record.entity.fields as EntityField[];
 
     // Merge with existing data
@@ -394,19 +434,26 @@ export async function updateEntityData(recordId: string, request: UpdateEntityDa
       };
     }
 
-    // Check unique constraints (excluding current record)
+    // Check unique constraints (excluding current record, scoped to app user if provided)
     for (const field of fields) {
       if (field.unique && mergedData[field.name] !== undefined) {
-        const existing = await prisma.entityData.findFirst({
-          where: {
-            entityId: record.entityId,
-            deletedAt: null,
-            id: { not: recordId },
-            data: {
-              path: [field.name],
-              equals: mergedData[field.name],
-            },
+        const uniqueWhere: any = {
+          entityId: record.entityId,
+          deletedAt: null,
+          id: { not: recordId },
+          data: {
+            path: [field.name],
+            equals: mergedData[field.name],
           },
+        };
+
+        // Scope uniqueness check to app user if provided
+        if (appUserId) {
+          uniqueWhere.appUserId = appUserId;
+        }
+
+        const existing = await prisma.entityData.findFirst({
+          where: uniqueWhere,
         });
 
         if (existing) {
@@ -441,8 +488,15 @@ export async function updateEntityData(recordId: string, request: UpdateEntityDa
 
 /**
  * Delete a data record (hard delete or soft delete based on entity settings)
+ * @param recordId - The record ID to delete
+ * @param hardDelete - Force hard delete even if entity supports soft delete
+ * @param appUserId - Optional app user ID to verify ownership
  */
-export async function deleteEntityData(recordId: string, hardDelete: boolean = false) {
+export async function deleteEntityData(
+  recordId: string,
+  hardDelete: boolean = false,
+  appUserId?: string
+) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -467,6 +521,11 @@ export async function deleteEntityData(recordId: string, hardDelete: boolean = f
 
     if (record.entity.app.userId !== session.user.id) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    // If appUserId is provided, verify that the record belongs to this app user
+    if (appUserId && record.appUserId !== appUserId) {
+      return { success: false, error: 'Unauthorized: You can only delete your own data' };
     }
 
     // Determine delete type
@@ -501,8 +560,10 @@ export async function deleteEntityData(recordId: string, hardDelete: boolean = f
 
 /**
  * Restore a soft-deleted record
+ * @param recordId - The record ID to restore
+ * @param appUserId - Optional app user ID to verify ownership
  */
-export async function restoreEntityData(recordId: string) {
+export async function restoreEntityData(recordId: string, appUserId?: string) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -527,6 +588,11 @@ export async function restoreEntityData(recordId: string) {
 
     if (record.entity.app.userId !== session.user.id) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    // If appUserId is provided, verify that the record belongs to this app user
+    if (appUserId && record.appUserId !== appUserId) {
+      return { success: false, error: 'Unauthorized: You can only restore your own data' };
     }
 
     if (!record.deletedAt) {
