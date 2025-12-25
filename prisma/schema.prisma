@@ -103,6 +103,9 @@ model App {
   // Backend as a Service - Entities
   entities    Entity[]
 
+  // App Users (authentication for end users)
+  appUsers    AppUser[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -245,4 +248,59 @@ model EntityData {
   @@index([entityId])
   @@index([deletedAt])
   @@map("entity_data")
+}
+
+// ============================================
+// App User Authentication Models
+// ============================================
+
+model AppUser {
+  id            String   @id @default(cuid())
+  email         String
+  passwordHash  String   // hashed with bcrypt
+  name          String?
+  avatar        String?
+  emailVerified Boolean  @default(false)
+
+  // App relation
+  appId         String
+  app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Sessions for this user
+  sessions      AppSession[]
+
+  // Metadata
+  metadata      Json?    // Custom user data (profile fields, preferences, etc.)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+
+  // Ensure unique email per app
+  @@unique([appId, email])
+  @@index([appId])
+  @@index([email])
+  @@map("app_users")
+}
+
+model AppSession {
+  id           String   @id @default(cuid())
+  token        String   @unique // JWT token
+  expiresAt    DateTime
+
+  // User relation
+  appUserId    String
+  appUser      AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  // Device/Client info
+  userAgent    String?
+  ipAddress    String?
+
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  @@index([appUserId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("app_sessions")
 }

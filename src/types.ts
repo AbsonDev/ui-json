@@ -427,3 +427,83 @@ export interface BaaSErrorResponse {
   message: string;
   details?: any;
 }
+
+// ============================================
+// App User Authentication Types
+// ============================================
+
+export interface AppUser {
+  id: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  emailVerified: boolean;
+  appId: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt?: Date | null;
+}
+
+export interface AppSession {
+  id: string;
+  token: string;
+  expiresAt: Date;
+  appUserId: string;
+  userAgent?: string;
+  ipAddress?: string;
+  createdAt: Date;
+  lastUsedAt: Date;
+}
+
+// Auth Request/Response types
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: AppUserResponse;
+  token?: string;
+  expiresAt?: string;
+  error?: string;
+}
+
+export interface AppUserResponse {
+  id: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  emailVerified: boolean;
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string | null;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  avatar?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+}
