@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
+import sharp from 'sharp';
 
 /**
  * Validate file mime type
@@ -147,4 +148,58 @@ export function getMimeTypeCategory(mimeType: string): string {
   if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'spreadsheet';
   if (mimeType.includes('zip') || mimeType.includes('rar')) return 'archive';
   return 'other';
+}
+
+/**
+ * Get image dimensions from buffer
+ */
+export async function getImageDimensions(buffer: Buffer): Promise<{ width: number; height: number } | null> {
+  try {
+    const metadata = await sharp(buffer).metadata();
+    if (metadata.width && metadata.height) {
+      return { width: metadata.width, height: metadata.height };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting image dimensions:', error);
+    return null;
+  }
+}
+
+/**
+ * Generate thumbnail for an image
+ */
+export async function generateThumbnail(buffer: Buffer, filename: string): Promise<{
+  thumbnailPath: string;
+  thumbnailUrl: string;
+} | null> {
+  try {
+    // Generate thumbnail filename
+    const ext = path.extname(filename);
+    const nameWithoutExt = path.basename(filename, ext);
+    const thumbnailFilename = `${nameWithoutExt}-thumb.jpg`;
+
+    // Generate thumbnail
+    const thumbnailBuffer = await sharp(buffer)
+      .resize(FILE_UPLOAD_CONFIG.THUMBNAIL_WIDTH, FILE_UPLOAD_CONFIG.THUMBNAIL_HEIGHT, {
+        fit: 'cover',
+        position: 'center',
+      })
+      .jpeg({
+        quality: FILE_UPLOAD_CONFIG.THUMBNAIL_QUALITY,
+      })
+      .toBuffer();
+
+    // Save thumbnail
+    const thumbnailPath = await saveFile(thumbnailBuffer, thumbnailFilename);
+    const thumbnailUrl = getFileUrl(thumbnailFilename);
+
+    return {
+      thumbnailPath,
+      thumbnailUrl,
+    };
+  } catch (error) {
+    console.error('Error generating thumbnail:', error);
+    return null;
+  }
 }

@@ -26,7 +26,8 @@ O sistema de File Storage permite que apps móveis façam upload, armazenamento 
 - ✅ Permissões (public/private)
 - ✅ Metadados completos (dimensões, mime type, etc.)
 - ✅ URLs públicas para acesso direto
-- ✅ Suporte a thumbnails (próxima versão)
+- ✅ **Thumbnails automáticos** para imagens (200x200px, JPEG quality 80)
+- ✅ **Dimensões automáticas** (width/height) para imagens
 
 ### Tipos de Arquivo Suportados
 
@@ -108,6 +109,9 @@ Authorization: Bearer {app_user_token}  # Opcional
     "mimeType": "image/jpeg",
     "size": 524288,
     "url": "/uploads/1735123456789-a1b2c3d4e5f6.jpg",
+    "thumbnailUrl": "/uploads/1735123456789-a1b2c3d4e5f6-thumb.jpg",
+    "width": 1920,
+    "height": 1080,
     "isPublic": false,
     "appUserId": "user_xyz789",
     "createdAt": "2024-12-25T10:30:45.000Z",
@@ -115,6 +119,8 @@ Authorization: Bearer {app_user_token}  # Opcional
   }
 }
 ```
+
+**Nota**: Para imagens, `thumbnailUrl`, `width` e `height` são preenchidos automaticamente.
 
 ### Exemplo: JavaScript/TypeScript
 
@@ -609,12 +615,15 @@ const createProduct = async (productData: any, imageFile: File) => {
 
 ## Próximas Features (Roadmap)
 
-- 🔄 **Geração de Thumbnails** - Automática para imagens
+- ✅ **Geração de Thumbnails** - Automática para imagens (**IMPLEMENTADO**)
+- ✅ **Dimensões de Imagem** - Width e height automáticos (**IMPLEMENTADO**)
 - 🔄 **Storage em S3** - Suporte a AWS S3, Cloudflare R2
-- 🔄 **Compressão de Imagens** - Otimização automática
+- 🔄 **Compressão de Imagens** - Otimização automática antes do upload
+- 🔄 **Múltiplos Tamanhos** - Gerar vários tamanhos (small, medium, large)
 - 🔄 **Metadata de Vídeo** - Duração, codec, resolução
 - 🔄 **Streaming de Vídeo** - Suporte a HLS/DASH
 - 🔄 **CDN Integration** - Distribuição via CDN
+- 🔄 **Watermark** - Adicionar marca d'água em imagens
 
 ---
 

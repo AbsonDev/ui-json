@@ -10,6 +10,8 @@ import {
   saveFile,
   deleteFile as deleteFileFromStorage,
   isImageFile,
+  getImageDimensions,
+  generateThumbnail,
 } from '@/lib/file-utils';
 import type {
   FileResponse,
@@ -140,9 +142,27 @@ export async function uploadFile(
     // Get isPublic from form data
     const isPublic = formData.get('isPublic') === 'true';
 
-    // Get image dimensions if it's an image (simplified - would use sharp in production)
+    // Process image: get dimensions and generate thumbnail
     let width: number | undefined;
     let height: number | undefined;
+    let thumbnailPath: string | undefined;
+    let thumbnailUrl: string | undefined;
+
+    if (isImageFile(file.type)) {
+      // Get image dimensions
+      const dimensions = await getImageDimensions(buffer);
+      if (dimensions) {
+        width = dimensions.width;
+        height = dimensions.height;
+      }
+
+      // Generate thumbnail
+      const thumbnail = await generateThumbnail(buffer, filename);
+      if (thumbnail) {
+        thumbnailPath = thumbnail.thumbnailPath;
+        thumbnailUrl = thumbnail.thumbnailUrl;
+      }
+    }
 
     // Create file record in database
     const fileRecord = await prisma.file.create({
@@ -153,12 +173,14 @@ export async function uploadFile(
         size: file.size,
         path: filePath,
         url,
+        thumbnailPath,
+        thumbnailUrl,
+        width,
+        height,
         isPublic,
         appId,
         appUserId: appUserId || null,
         userId: session.user.id,
-        width,
-        height,
       },
     });
 
