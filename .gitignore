@@ -1,3 +1,17 @@
+# Dependencies
+node_modules
+
+# Next.js
+.next
+out
+build
+dist
+dist-ssr
+
+# Environment variables
+.env
+.env*.local
+
 # Logs
 logs
 *.log
@@ -7,18 +21,23 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Testing
+coverage
+.nyc_output
 
-# Editor directories and files
+# Misc
+.DS_Store
+*.pem
+
+# Debug
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Prisma
+prisma/migrations/migration_lock.toml
