@@ -22,6 +22,11 @@ model User {
   password      String // hashed with bcrypt
   image         String?
   isAdmin       Boolean   @default(false)
+
+  // Freemium fields
+  planTier         PlanTier @default(FREE)
+  stripeCustomerId String?  @unique
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -30,10 +35,23 @@ model User {
   sessions           Session[]
   apps               App[]                // Apps created by user
   databaseConnections DatabaseConnection[] // Database connections owned by user
+  subscriptions      Subscription[]       // User subscriptions
+  usageMetrics       UsageMetric[]        // Usage tracking
+  invoices           Invoice[]            // Billing invoices
 
   @@index([email, isAdmin]) // Composite index for admin queries
   @@index([createdAt]) // Index for sorting by creation date
+  @@index([planTier]) // Index for plan-based queries
+  @@index([stripeCustomerId]) // Index for Stripe lookups
   @@map("users")
+}
+
+// Plan tier enumeration
+enum PlanTier {
+  FREE
+  PRO
+  TEAM
+  ENTERPRISE
 }
 
 model Account {
@@ -207,4 +225,175 @@ model Build {
   @@index([appId, platform, status]) // Composite index for platform-specific queries
   @@index([status, createdAt]) // Index for global build monitoring
   @@map("builds")
+}
+
+// ============================================
+// Subscription & Billing Models
+// ============================================
+
+model Subscription {
+  id                    String   @id @default(cuid())
+
+  // Stripe IDs
+  stripeSubscriptionId  String   @unique
+  stripePriceId         String
+  stripeProductId       String
+
+  // Subscription details
+  planTier              PlanTier
+  status                SubscriptionStatus
+
+  // Billing cycle
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean  @default(false)
+  canceledAt            DateTime?
+
+  // Pricing
+  amount                Int      // in cents (e.g., 1900 = $19.00)
+  currency              String   @default("usd")
+  interval              BillingInterval
+
+  // Trial
+  trialStart            DateTime?
+  trialEnd              DateTime?
+
+  // Metadata
+  metadata              Json?
+
+  // User relation
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+model UsageMetric {
+  id          String   @id @default(cuid())
+
+  // User relation
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Metrics tracking
+  appsCount           Int      @default(0)
+  buildsCount         Int      @default(0)
+  exportsCount        Int      @default(0)
+  templatesUsedCount  Int      @default(0)
+  apiCallsCount       Int      @default(0)
+  storageUsedMB       Float    @default(0)
+
+  // Period tracking
+  periodStart         DateTime
+  periodEnd           DateTime
+
+  // Reset tracking
+  resetAt             DateTime?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, periodEnd])
+  @@index([periodEnd])
+  @@map("usage_metrics")
+}
+
+model Invoice {
+  id                  String   @id @default(cuid())
+
+  // Stripe data
+  stripeInvoiceId     String   @unique
+  stripePaymentIntentId String?
+
+  // Invoice details
+  amount              Int      // in cents
+  currency            String   @default("usd")
+  status              InvoiceStatus
+
+  // URLs
+  hostedInvoiceUrl    String?
+  invoicePdf          String?
+
+  // Dates
+  periodStart         DateTime
+  periodEnd           DateTime
+  dueDate             DateTime?
+  paidAt              DateTime?
+
+  // User relation
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeInvoiceId])
+  @@index([status])
+  @@index([userId, createdAt])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+model PlanConfig {
+  id          String   @id @default(cuid())
+
+  planTier    PlanTier @unique
+
+  // Feature limits
+  maxApps             Int      // -1 for unlimited
+  maxBuilds           Int      // per month
+  maxExports          Int      // per month
+  maxTemplates        Int      // -1 for all
+  maxApiCalls         Int      // per month
+  maxStorageMB        Int
+
+  // Feature flags
+  customDomain        Boolean  @default(false)
+  prioritySupport     Boolean  @default(false)
+  removeWatermark     Boolean  @default(false)
+  teamCollaboration   Boolean  @default(false)
+  analytics           Boolean  @default(false)
+  versionHistory      Boolean  @default(false)
+  aiAssistant         Boolean  @default(false)
+
+  // Pricing
+  priceMonthly        Int?     // in cents
+  priceYearly         Int?     // in cents
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("plan_configs")
 }
