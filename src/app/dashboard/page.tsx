@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useMemo, useCallback, useEffect, createContext } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, createContext, useRef } from 'react'
 import { UIApp, UIScreen, UIAction, UIComponent } from '@/types'
-import { sampleApps, blankAppJson } from '@/constants'
 import { Renderer } from '@/components/Renderer'
 import { ActionContext } from '@/hooks/useAction'
 import { DatabaseContext } from '@/hooks/useDatabase'
@@ -12,9 +11,10 @@ import { DatabaseEditor } from '@/components/DatabaseEditor'
 import { AuthScreen } from '@/components/AuthScreen'
 import { FlowBuilder } from '@/components/FlowBuilder'
 import { Snippets } from '@/components/Snippets'
-import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, Undo, Redo, LogOut } from 'lucide-react'
-import { useHistory } from '@/hooks/useHistory'
+import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings } from 'lucide-react'
+import { useApps } from '@/hooks/useApps'
 import { signOut } from 'next-auth/react'
+import Link from 'next/link'
 
 // --- Context for Design Tokens ---
 export const DesignTokensContext = createContext<Record<string, any>>({})
@@ -101,18 +101,15 @@ const CustomDialog: React.FC<DialogProps> = ({ config, onClose }) => {
 }
 
 export default function DashboardPage() {
-  // TODO: Replace localStorage with database calls
-  const {
-    state: apps,
-    setState: setApps,
-    undo,
-    redo,
-    canUndo,
-    canRedo
-  } = useHistory(() => sampleApps)
+  // PostgreSQL integration
+  const { apps, loading, error: appsError, createNewApp, updateAppData, deleteAppById } = useApps()
 
   const [selectedAppIndex, setSelectedAppIndex] = useState(0)
-  const jsonString = useMemo(() => apps[selectedAppIndex]?.json || '', [apps, selectedAppIndex])
+  const [saving, setSaving] = useState(false)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const currentApp = apps[selectedAppIndex]
+  const jsonString = useMemo(() => currentApp?.json || '', [currentApp])
 
   const [error, setError] = useState<string | null>(null)
   const [currentScreenId, setCurrentScreenId] = useState<string | null>(null)
@@ -120,8 +117,17 @@ export default function DashboardPage() {
   const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null)
   const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets'>('editor')
   const [dialog, setDialog] = useState<DialogProps['config'] | null>(null)
-  const [databaseData, setDatabaseData] = useState<Record<number, Record<string, any[]>>>({})
+  const [databaseData, setDatabaseData] = useState<Record<string, any>>({})
   const [session, setSession] = useState<{ user: any } | null>(null)
+
+  // Load database data from current app
+  useEffect(() => {
+    if (currentApp?.databaseData) {
+      setDatabaseData(currentApp.databaseData)
+    } else {
+      setDatabaseData({})
+    }
+  }, [currentApp?.id])
 
   const uiApp: UIApp | null = useMemo(() => {
     try {
@@ -145,19 +151,52 @@ export default function DashboardPage() {
   const authConfig = uiApp?.app.authentication
   const designTokens = uiApp?.app.designTokens || {}
 
-  const currentDbData = useMemo(() => databaseData[selectedAppIndex] || {}, [databaseData, selectedAppIndex])
+  // Auto-save JSON changes (debounced)
+  const handleSetJsonString = useCallback((newJson: string) => {
+    if (!currentApp) return
 
-  const setCurrentDbData = useCallback((data: Record<string, any[]>) => {
-      setDatabaseData(prev => ({...prev, [selectedAppIndex]: data}))
-  }, [selectedAppIndex])
+    // Update local state immediately for responsive UI
+    const updatedApp = { ...currentApp, json: newJson }
+    apps[selectedAppIndex] = updatedApp
+
+    // Debounce save to database
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    setSaving(true)
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await updateAppData(currentApp.id, { json: newJson })
+      } catch (err) {
+        console.error('Error saving app:', err)
+      } finally {
+        setSaving(false)
+      }
+    }, 1000) // Save 1 second after user stops typing
+  }, [currentApp, apps, selectedAppIndex, updateAppData])
+
+  // Auto-save database data changes
+  useEffect(() => {
+    if (!currentApp || !databaseData) return
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await updateAppData(currentApp.id, { databaseData })
+      } catch (err) {
+        console.error('Error saving database data:', err)
+      }
+    }, 1000)
+
+    return () => clearTimeout(timeoutId)
+  }, [databaseData, currentApp, updateAppData])
 
   // Sync database data structure with schema
   useEffect(() => {
     const appSchema = uiApp?.app.databaseSchema
     if (appSchema) {
       setDatabaseData(prevDbData => {
-        const currentAppData = prevDbData[selectedAppIndex] || {}
-        const newAppData = { ...currentAppData }
+        const newAppData = { ...prevDbData }
         let needsUpdate = false
 
         for (const tableName in appSchema) {
@@ -167,9 +206,9 @@ export default function DashboardPage() {
           }
         }
 
-        const isToDoApp = apps[selectedAppIndex].name === 'To-Do List'
+        const isToDoApp = currentApp?.name === 'To-Do List'
         const isTasksTableEmpty = newAppData['tasks']?.length === 0
-        const isDataStoreEmpty = !Object.values(currentAppData).some(table => Array.isArray(table) && table.length > 0)
+        const isDataStoreEmpty = !Object.values(newAppData).some(table => Array.isArray(table) && table.length > 0)
 
         if (isToDoApp && isTasksTableEmpty && isDataStoreEmpty) {
           newAppData['tasks'] = [
@@ -180,22 +219,10 @@ export default function DashboardPage() {
           needsUpdate = true
         }
 
-        if (needsUpdate) {
-          return { ...prevDbData, [selectedAppIndex]: newAppData }
-        }
-
-        return prevDbData
+        return needsUpdate ? newAppData : prevDbData
       })
     }
-  }, [selectedAppIndex, uiApp, apps])
-
-  const handleSetJsonString = useCallback((newJson: string) => {
-    setApps(currentApps => {
-      const newApps = [...currentApps]
-      newApps[selectedAppIndex] = { ...newApps[selectedAppIndex], json: newJson }
-      return newApps
-    })
-  }, [selectedAppIndex, setApps])
+  }, [uiApp, currentApp])
 
   const handleAction = useCallback((action: UIAction) => {
     if (!action) return
@@ -220,9 +247,9 @@ export default function DashboardPage() {
                 newRecord[dbField] = formState[formFieldId]
             }
 
-            setCurrentDbData({
-                ...currentDbData,
-                [table]: [...(currentDbData[table] || []), newRecord]
+            setDatabaseData({
+                ...databaseData,
+                [table]: [...(databaseData[table] || []), newRecord]
             })
 
             const newFormState = {...formState}
@@ -250,9 +277,9 @@ export default function DashboardPage() {
         }
         break
       case 'deleteRecord':
-        setCurrentDbData({
-            ...currentDbData,
-            [action.table]: (currentDbData[action.table] || []).filter(r => r.id !== action.recordId)
+        setDatabaseData({
+            ...databaseData,
+            [action.table]: (databaseData[action.table] || []).filter(r => r.id !== action.recordId)
         })
         break
 
@@ -260,7 +287,7 @@ export default function DashboardPage() {
         if (!authConfig) return
         const email = formState[action.fields.email]
         const password = formState[action.fields.password]
-        const userTable = currentDbData[authConfig.userTable] || []
+        const userTable = databaseData[authConfig.userTable] || []
         const user = userTable.find(u => u[authConfig.emailField] === email && u[authConfig.passwordField] === password)
 
         if (user) {
@@ -275,7 +302,7 @@ export default function DashboardPage() {
       case 'auth:signup': {
         if (!authConfig) return
         const email = formState[action.fields.email]
-        const userTable = currentDbData[authConfig.userTable] || []
+        const userTable = databaseData[authConfig.userTable] || []
         const userExists = userTable.some(u => u[authConfig.emailField] === email)
 
         if (userExists) {
@@ -289,8 +316,8 @@ export default function DashboardPage() {
             newUser[field] = formState[formFieldId]
         }
 
-        setCurrentDbData({
-            ...currentDbData,
+        setDatabaseData({
+            ...databaseData,
             [authConfig.userTable]: [...userTable, newUser]
         })
         setSession({ user: newUser })
@@ -308,7 +335,7 @@ export default function DashboardPage() {
       default:
         console.warn('Unknown action type:', (action as any).type)
     }
-  }, [uiApp, formState, currentDbData, setCurrentDbData, authConfig])
+  }, [uiApp, formState, databaseData, authConfig])
 
   const currentScreen: UIScreen | undefined = useMemo(() => {
     if (!uiApp || !currentScreenId || currentScreenId.startsWith('auth:')) return undefined
@@ -337,35 +364,27 @@ export default function DashboardPage() {
       type: 'prompt',
       title: 'Novo Aplicativo',
       message: 'Digite o nome do novo aplicativo:',
-      onConfirm: (newAppName) => {
+      onConfirm: async (newAppName) => {
         if (newAppName && newAppName.trim()) {
-          const newApp = {
-            name: newAppName.trim(),
-            json: blankAppJson,
+          const newApp = await createNewApp(newAppName.trim())
+          if (newApp) {
+            setSelectedAppIndex(apps.length) // Select the newly created app
           }
-          const newApps = [...apps, newApp]
-          setApps(newApps)
-          setSelectedAppIndex(newApps.length - 1)
         }
       }
     })
   }
 
   const handleEditAppName = () => {
-    const currentApp = apps[selectedAppIndex]
     if (!currentApp) return
     setDialog({
         type: 'prompt',
         title: 'Editar Nome do Aplicativo',
         message: 'Digite o novo nome para o aplicativo:',
         defaultValue: currentApp.name,
-        onConfirm: (newAppName) => {
+        onConfirm: async (newAppName) => {
             if (newAppName && newAppName.trim() && newAppName.trim() !== currentApp.name) {
-                setApps(currentApps => {
-                    const newApps = [...currentApps]
-                    newApps[selectedAppIndex] = { ...newApps[selectedAppIndex], name: newAppName.trim() }
-                    return newApps
-                })
+                await updateAppData(currentApp.id, { name: newAppName.trim() })
             }
         }
     })
@@ -381,16 +400,15 @@ export default function DashboardPage() {
       })
       return
     }
-    const currentApp = apps[selectedAppIndex]
+    if (!currentApp) return
     setDialog({
         type: 'confirm',
         title: 'Confirmar Deleção',
         message: `Tem certeza que deseja deletar o aplicativo "${currentApp.name}"?`,
-        onConfirm: () => {
-            const newApps = apps.filter((_, index) => index !== selectedAppIndex)
-            setApps(newApps)
-            if (selectedAppIndex >= newApps.length) {
-                setSelectedAppIndex(newApps.length - 1)
+        onConfirm: async () => {
+            await deleteAppById(currentApp.id)
+            if (selectedAppIndex >= apps.length - 1) {
+                setSelectedAppIndex(Math.max(0, apps.length - 2))
             }
         }
     })
@@ -460,15 +478,45 @@ export default function DashboardPage() {
     }
 }, [uiApp, currentScreenId, handleSetJsonString])
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando aplicativos...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (appsError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erro ao carregar aplicativos: {appsError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <ActionContext.Provider value={{ handleAction, formState, setFormState }}>
-      <DatabaseContext.Provider value={{ data: currentDbData }}>
+      <DatabaseContext.Provider value={{ data: databaseData }}>
         <SessionContext.Provider value={{ session }}>
           <div className="flex flex-col h-screen font-sans">
             <header className="bg-white shadow-md p-4 z-10 flex justify-between items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">UI-JSON Visualizer</h1>
-                <p className="text-gray-600">A live editor for the UI-JSON declarative language.</p>
+                <p className="text-gray-600">
+                  A live editor for the UI-JSON declarative language.
+                  {saving && <span className="ml-2 text-sm text-blue-600">💾 Salvando...</span>}
+                </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -480,7 +528,7 @@ export default function DashboardPage() {
                     className="block w-48 px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
                     >
                     {apps.map((app, index) => (
-                        <option key={index} value={index} className="text-gray-900">
+                        <option key={app.id} value={index} className="text-gray-900">
                         {app.name}
                         </option>
                     ))}
@@ -503,14 +551,11 @@ export default function DashboardPage() {
                     </button>
                 </div>
                 <div className="flex items-center gap-1 border-l pl-3 ml-1">
-                    <button onClick={undo} disabled={!canUndo} title="Desfazer" className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <Undo size={20} />
-                    </button>
-                    <button onClick={redo} disabled={!canRedo} title="Refazer" className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <Redo size={20} />
-                    </button>
-                </div>
-                <div className="flex items-center gap-1 border-l pl-3 ml-1">
+                    <Link href="/admin" title="Admin Panel">
+                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <Settings size={20} />
+                        </button>
+                    </Link>
                     <button
                         onClick={() => signOut()}
                         title="Logout"
@@ -575,9 +620,9 @@ export default function DashboardPage() {
                     {activeTab === 'database' && (
                       <DatabaseEditor
                         uiApp={uiApp}
-                        data={currentDbData}
+                        data={databaseData}
                         onSchemaChange={handleSchemaChange}
-                        onDataChange={setCurrentDbData}
+                        onDataChange={setDatabaseData}
                       />
                     )}
                     {activeTab === 'flow' && (
