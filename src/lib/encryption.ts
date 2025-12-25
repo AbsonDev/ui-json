@@ -1,13 +1,27 @@
 import crypto from 'crypto'
 
-// IMPORTANT: Store this in environment variables in production!
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-change-in-production-32'
 const ALGORITHM = 'aes-256-cbc'
 
-// Ensure key is exactly 32 bytes for AES-256
+// Validate ENCRYPTION_KEY at module load time
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
+
+if (!ENCRYPTION_KEY) {
+  throw new Error(
+    'ENCRYPTION_KEY environment variable is required. ' +
+    'Generate one with: openssl rand -base64 32'
+  )
+}
+
+if (ENCRYPTION_KEY.length !== 32) {
+  throw new Error(
+    `ENCRYPTION_KEY must be exactly 32 characters long (current: ${ENCRYPTION_KEY.length}). ` +
+    'Generate one with: openssl rand -base64 32 | cut -c1-32'
+  )
+}
+
+// Get the validated encryption key as Buffer
 function getKey(): Buffer {
-  const key = ENCRYPTION_KEY.padEnd(32, '0').substring(0, 32)
-  return Buffer.from(key, 'utf-8')
+  return Buffer.from(ENCRYPTION_KEY, 'utf-8')
 }
 
 /**
