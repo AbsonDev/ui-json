@@ -15,6 +15,7 @@ import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, Lo
 import { useApps } from '@/hooks/useApps'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 // --- Context for Design Tokens ---
 export const DesignTokensContext = createContext<Record<string, any>>({})
@@ -556,15 +557,16 @@ export default function DashboardPage() {
                             <Database size={20} />
                         </button>
                     </Link>
+                    <ThemeSwitcher />
                     <Link href="/admin" title="Admin Panel">
-                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <Settings size={20} />
                         </button>
                     </Link>
                     <button
                         onClick={() => signOut()}
                         title="Logout"
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <LogOut size={20} />
                     </button>

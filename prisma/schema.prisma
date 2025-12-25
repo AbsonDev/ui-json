@@ -31,6 +31,8 @@ model User {
   apps               App[]                // Apps created by user
   databaseConnections DatabaseConnection[] // Database connections owned by user
 
+  @@index([email, isAdmin]) // Composite index for admin queries
+  @@index([createdAt]) // Index for sorting by creation date
   @@map("users")
 }
 
@@ -51,6 +53,8 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId]) // Index for user account lookups
+  @@index([userId, provider]) // Composite index for provider-specific queries
   @@map("accounts")
 }
 
@@ -61,6 +65,9 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId]) // Index for user session lookups
+  @@index([expires]) // Index for expired session cleanup
+  @@index([userId, expires]) // Composite index for active user sessions
   @@map("sessions")
 }
 
@@ -105,6 +112,11 @@ model App {
 
   @@index([userId])
   @@index([databaseConnectionId])
+  @@index([userId, isPublic]) // Composite index for public app queries
+  @@index([userId, updatedAt]) // Composite index for recently updated apps
+  @@index([userId, createdAt]) // Composite index for recently created apps
+  @@index([isPublic, createdAt]) // Index for public app discovery
+  @@index([useLocalStorage]) // Index for storage type queries
   @@map("apps")
 }
 
@@ -143,6 +155,9 @@ model DatabaseConnection {
 
   @@index([userId])
   @@index([isActive])
+  @@index([userId, isActive]) // Composite index for active user connections
+  @@index([userId, type]) // Composite index for type-specific queries
+  @@index([lastTestedAt]) // Index for connection health monitoring
   @@map("database_connections")
 }
 
@@ -187,5 +202,9 @@ model Build {
   @@index([appId])
   @@index([status])
   @@index([platform])
+  @@index([appId, status]) // Composite index for app build status queries
+  @@index([appId, createdAt]) // Composite index for recent builds
+  @@index([appId, platform, status]) // Composite index for platform-specific queries
+  @@index([status, createdAt]) // Index for global build monitoring
   @@map("builds")
 }
