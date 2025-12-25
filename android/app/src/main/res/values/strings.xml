@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">UI JSON Visualizer</string>
+    <string name="title_activity_main">UI JSON Visualizer</string>
+    <string name="package_name">com.uijson.visualizer</string>
+    <string name="custom_url_scheme">com.uijson.visualizer</string>
+</resources>

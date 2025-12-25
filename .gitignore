@@ -41,3 +41,32 @@ coverage
 
 # Prisma
 prisma/migrations/migration_lock.toml
+
+# Mobile (Capacitor)
+# Arquivos sensíveis de assinatura - NUNCA commitar!
+android/keystores/
+android/app/google-services.json
+android/gradle.properties
+ios/*.mobileprovision
+ios/*.p12
+ios/*.cer
+
+# Arquivos gerados pelo Capacitor
+android/app/src/main/assets/public/
+ios/App/public/
+
+# Configurações locais do Android Studio
+android/.gradle
+android/local.properties
+android/.idea
+android/*.iml
+android/build/
+android/app/build/
+
+# Configurações locais do Xcode
+ios/App/Pods/
+ios/App/*.xcworkspace/xcuserdata/
+ios/App/*.xcodeproj/xcuserdata/
+ios/App/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/build/
+ios/App/DerivedData/

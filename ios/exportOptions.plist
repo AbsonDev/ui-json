@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Método de distribuição -->
+    <key>method</key>
+    <string>app-store</string>
+
+    <!-- Team ID (configurar com seu Team ID da Apple Developer) -->
+    <!-- <key>teamID</key>
+    <string>YOUR_TEAM_ID</string> -->
+
+    <!-- Upload de symbols para crash reports -->
+    <key>uploadSymbols</key>
+    <true/>
+
+    <!-- Upload de bitcode (opcional, Apple não requer mais) -->
+    <key>uploadBitcode</key>
+    <false/>
+
+    <!-- Compilação para todos os dispositivos suportados -->
+    <key>compileBitcode</key>
+    <false/>
+
+    <!-- Opções de assinatura -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <!-- Opções de manifesto para distribuição enterprise (não usado para App Store) -->
+    <!-- <key>manifest</key>
+    <dict>
+        <key>appURL</key>
+        <string>https://example.com/app.ipa</string>
+    </dict> -->
+
+    <!-- Opções de thinning (otimização por dispositivo) -->
+    <key>thinning</key>
+    <string>&lt;none&gt;</string>
+
+    <!-- Provisioning profiles (automático quando signingStyle é automatic) -->
+    <!-- <key>provisioningProfiles</key>
+    <dict>
+        <key>com.uijson.visualizer</key>
+        <string>Nome do Provisioning Profile</string>
+    </dict> -->
+
+    <!-- Certificado de distribuição (automático quando signingStyle é automatic) -->
+    <!-- <key>signingCertificate</key>
+    <string>Apple Distribution</string> -->
+
+    <!-- Opções de destination (App Store Connect) -->
+    <key>destination</key>
+    <string>upload</string>
+</dict>
+</plist>
