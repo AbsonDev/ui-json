@@ -11,7 +11,12 @@ import { DatabaseEditor } from '@/components/DatabaseEditor'
 import { AuthScreen } from '@/components/AuthScreen'
 import { FlowBuilder } from '@/components/FlowBuilder'
 import { Snippets } from '@/components/Snippets'
-import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings } from 'lucide-react'
+import { TemplatesGallery } from '@/components/TemplatesGallery'
+import { OnboardingWizard, useOnboarding } from '@/components/OnboardingWizard'
+import { ExportShareButton } from '@/components/ExportShare'
+import { VersionHistoryButton, useVersionHistory } from '@/components/VersionHistory'
+import { CommandPalette } from '@/components/CommandPalette'
+import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Sparkles } from 'lucide-react'
 import { useApps } from '@/hooks/useApps'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
@@ -105,7 +110,13 @@ export default function DashboardPage() {
   // PostgreSQL integration
   const { apps, loading, error: appsError, createNewApp, updateAppData, deleteAppById } = useApps()
 
+  // Onboarding
+  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding()
+
   const [selectedAppIndex, setSelectedAppIndex] = useState(0)
+
+  // Version History
+  const { saveVersion } = useVersionHistory(currentApp?.id || '', jsonString)
   const [saving, setSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -116,10 +127,12 @@ export default function DashboardPage() {
   const [currentScreenId, setCurrentScreenId] = useState<string | null>(null)
   const [formState, setFormState] = useState<Record<string, any>>({})
   const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null)
-  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets'>('editor')
+  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'templates'>('editor')
   const [dialog, setDialog] = useState<DialogProps['config'] | null>(null)
   const [databaseData, setDatabaseData] = useState<Record<string, any>>({})
   const [session, setSession] = useState<{ user: any } | null>(null)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   // Load database data from current app
   useEffect(() => {
@@ -479,6 +492,25 @@ export default function DashboardPage() {
     }
 }, [uiApp, currentScreenId, handleSetJsonString])
 
+  const handleImportTemplate = useCallback(async (templateJson: string, templateName: string) => {
+    try {
+      const newApp = await createNewApp(templateName)
+      if (newApp) {
+        await updateAppData(newApp.id, { json: templateJson })
+        setSelectedAppIndex(apps.length)
+        setActiveTab('editor')
+      }
+    } catch (e) {
+      console.error('Error importing template:', e)
+      setDialog({
+        type: 'alert',
+        title: 'Erro ao Importar Template',
+        message: e instanceof Error ? e.message : 'Ocorreu um erro ao importar o template.',
+        onConfirm: () => {},
+      })
+    }
+  }, [createNewApp, updateAppData, apps.length])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -551,6 +583,22 @@ export default function DashboardPage() {
                         <Trash2 size={20} />
                     </button>
                 </div>
+                <div className="flex items-center gap-2 border-l pl-3 ml-1">
+                    {currentApp && (
+                      <>
+                        <VersionHistoryButton
+                          appId={currentApp.id}
+                          currentJson={jsonString}
+                          onRestore={(json) => handleSetJsonString(json)}
+                        />
+                        <ExportShareButton
+                          appName={currentApp.name}
+                          appJson={jsonString}
+                          appId={currentApp.id}
+                        />
+                      </>
+                    )}
+                </div>
                 <div className="flex items-center gap-1 border-l pl-3 ml-1">
                     <Link href="/dashboard/databases" title="Database Connections">
                         <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -582,6 +630,7 @@ export default function DashboardPage() {
                   {activeTab === 'database' && 'Database Manager'}
                   {activeTab === 'flow' && 'Screen Flow'}
                   {activeTab === 'snippets' && 'Component Library'}
+                  {activeTab === 'templates' && 'Templates Gallery'}
                 </h2>
                 <div className={`flex-1 flex flex-col border rounded-lg shadow-inner ${error && activeTab === 'editor' ? 'border-red-500' : 'border-gray-300'}`}>
                   <div className="flex border-b border-gray-200 bg-white rounded-t-lg">
@@ -591,6 +640,10 @@ export default function DashboardPage() {
                      <button onClick={() => setActiveTab('flow')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'flow' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                       <Workflow size={16} />
                       Fluxo
+                    </button>
+                    <button onClick={() => setActiveTab('templates')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'templates' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                      <Sparkles size={16} />
+                      Templates
                     </button>
                     <button onClick={() => setActiveTab('snippets')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'snippets' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                       <Library size={16} />
@@ -620,6 +673,9 @@ export default function DashboardPage() {
                     )}
                      {activeTab === 'snippets' && (
                       <Snippets onAddSnippet={handleAddSnippet} />
+                    )}
+                    {activeTab === 'templates' && (
+                      <TemplatesGallery onImportTemplate={handleImportTemplate} />
                     )}
                     {activeTab === 'ai' && (
                       <AIAssistant jsonString={jsonString} setJsonString={handleSetJsonString} setActiveTab={setActiveTab} />
@@ -695,6 +751,23 @@ export default function DashboardPage() {
               </div>
             </main>
             {dialog && <CustomDialog config={dialog} onClose={() => setDialog(null)} />}
+            <CommandPalette
+              onCreateApp={handleCreateApp}
+              onOpenTemplates={() => setActiveTab('templates')}
+              onOpenAI={() => setActiveTab('ai')}
+              onOpenDatabase={() => setActiveTab('database')}
+              onOpenFlow={() => setActiveTab('flow')}
+              onOpenSnippets={() => setActiveTab('snippets')}
+              onExport={() => setShowExportDialog(true)}
+              onVersionHistory={() => setShowVersionHistory(true)}
+              onOpenSettings={() => window.location.href = '/admin'}
+            />
+            {showOnboarding && (
+              <OnboardingWizard
+                onComplete={completeOnboarding}
+                onSkip={skipOnboarding}
+              />
+            )}
           </div>
         </SessionContext.Provider>
       </DatabaseContext.Provider>
