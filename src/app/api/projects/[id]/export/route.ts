@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mobileBuilder } from '@/lib/mobile-builder/MobileBuilder';
 import type { BuildRequest, Platform, BuildType } from '@/lib/mobile-builder/types';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
@@ -41,6 +42,20 @@ export async function POST(
       );
     }
 
+    // Criar registro do build no banco
+    const buildRecord = await prisma.build.create({
+      data: {
+        appId: projectId,
+        platform: platform as Platform,
+        buildType: buildType as BuildType,
+        status: 'pending',
+        bundleId: config.bundleId,
+        appVersion: config.version || '1.0.0',
+        versionCode: config.versionCode || 1,
+        appName: config.name,
+      },
+    });
+
     // Criar requisição de build
     const buildRequest: BuildRequest = {
       projectId,
@@ -62,14 +77,54 @@ export async function POST(
     // Inicializar builder
     await mobileBuilder.initialize();
 
-    // Processar build (em produção, isto deveria ser uma fila/job)
-    const result = await mobileBuilder.buildProject(buildRequest, {
-      includeAssets: true,
-      minify: buildType === 'release',
-      signing: buildType === 'release' ? signing : undefined,
+    // Atualizar status para building
+    await prisma.build.update({
+      where: { id: buildRecord.id },
+      data: { status: 'building' },
     });
 
-    return NextResponse.json(result);
+    const startTime = Date.now();
+
+    try {
+      // Processar build (em produção, isto deveria ser uma fila/job)
+      const result = await mobileBuilder.buildProject(buildRequest, {
+        includeAssets: true,
+        minify: buildType === 'release',
+        signing: buildType === 'release' ? signing : undefined,
+      });
+
+      const buildDuration = Math.floor((Date.now() - startTime) / 1000);
+
+      // Atualizar build com resultado
+      await prisma.build.update({
+        where: { id: buildRecord.id },
+        data: {
+          status: result.status,
+          downloadUrl: result.downloadUrl,
+          error: result.error,
+          buildDuration,
+          completedAt: result.completedAt,
+        },
+      });
+
+      return NextResponse.json({
+        ...result,
+        buildId: buildRecord.id,
+      });
+
+    } catch (err) {
+      // Atualizar build com erro
+      await prisma.build.update({
+        where: { id: buildRecord.id },
+        data: {
+          status: 'failed',
+          error: err instanceof Error ? err.message : 'Build failed',
+          completedAt: new Date(),
+        },
+      });
+
+      throw err;
+    }
 
   } catch (error) {
     console.error('Export error:', error);
@@ -87,8 +142,11 @@ export async function GET(
   try {
     const projectId = params.id;
 
-    // Listar builds do projeto
-    const builds = await mobileBuilder.listBuilds(projectId);
+    // Listar builds do projeto do banco de dados
+    const builds = await prisma.build.findMany({
+      where: { appId: projectId },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return NextResponse.json({ builds });
 

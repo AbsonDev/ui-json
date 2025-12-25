@@ -97,6 +97,9 @@ model App {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Mobile builds
+  builds      Build[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -141,4 +144,48 @@ model DatabaseConnection {
   @@index([userId])
   @@index([isActive])
   @@map("database_connections")
+}
+
+// ============================================
+// Mobile Build Models
+// ============================================
+
+model Build {
+  id            String   @id @default(cuid())
+
+  // Build configuration
+  platform      String   // "android" | "ios"
+  buildType     String   // "debug" | "release"
+  status        String   // "pending" | "building" | "success" | "failed"
+
+  // App configuration for this build
+  bundleId      String   // com.myapp.myproject
+  appVersion    String   // 1.0.0
+  versionCode   Int      // 1, 2, 3...
+  appName       String   // Name of the app at build time
+
+  // Build output
+  downloadUrl   String?  // URL to download AAB/IPA
+  fileSize      Int?     // File size in bytes
+  fileName      String?  // app-release.aab
+
+  // Error info (if failed)
+  error         String?  @db.Text
+  errorDetails  String?  @db.Text
+
+  // Build metadata
+  buildDuration Int?     // Duration in seconds
+  completedAt   DateTime?
+
+  // Relation to app
+  appId         String
+  app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([appId])
+  @@index([status])
+  @@index([platform])
+  @@map("builds")
 }
