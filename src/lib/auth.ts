@@ -30,17 +30,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           const { email, password } = loginSchema.parse(credentials)
 
+          // NOTE: Rate limiting for login is handled in middleware
+          // See src/middleware.ts for IP-based rate limiting
+
           const user = await prisma.user.findUnique({
             where: { email },
           })
 
           if (!user || !user.password) {
+            // Return null for security (don't reveal if user exists)
             return null
           }
 
           const passwordsMatch = await bcrypt.compare(password, user.password)
 
           if (!passwordsMatch) {
+            // Return null for security (don't reveal if password is wrong)
             return null
           }
 
