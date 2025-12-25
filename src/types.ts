@@ -283,3 +283,147 @@ export interface UIApp {
   screens: Record<string, UIScreen>;
   initialScreen: string;
 }
+
+// ============================================
+// Backend as a Service (BaaS) Types
+// ============================================
+
+// Field types supported by BaaS
+export type EntityFieldType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'email'
+  | 'url'
+  | 'text'      // Long text
+  | 'json'      // JSON object
+  | 'relation'; // Relation to another entity
+
+// Validation rule types
+export interface ValidationRule {
+  type: 'required' | 'min' | 'max' | 'pattern' | 'email' | 'url' | 'unique' | 'custom';
+  value?: any;
+  message?: string;
+}
+
+// Entity field definition
+export interface EntityField {
+  name: string;
+  type: EntityFieldType;
+  displayName?: string;
+  description?: string;
+  required?: boolean;
+  unique?: boolean;
+  defaultValue?: any;
+  validation?: ValidationRule[];
+
+  // For relations
+  relationTo?: string;      // Entity name
+  relationType?: '1:1' | '1:N' | 'N:N';
+
+  // UI hints
+  placeholder?: string;
+  helpText?: string;
+
+  // Advanced options
+  indexed?: boolean;
+  searchable?: boolean;
+  sortable?: boolean;
+}
+
+// Entity definition
+export interface Entity {
+  id: string;
+  name: string;
+  displayName?: string;
+  description?: string;
+  fields: EntityField[];
+  timestamps?: boolean;
+  softDelete?: boolean;
+  appId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Entity data record
+export interface EntityData {
+  id: string;
+  entityId: string;
+  data: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
+}
+
+// API Request/Response types
+export interface CreateEntityRequest {
+  name: string;
+  displayName?: string;
+  description?: string;
+  fields: EntityField[];
+  timestamps?: boolean;
+  softDelete?: boolean;
+}
+
+export interface UpdateEntityRequest {
+  displayName?: string;
+  description?: string;
+  fields?: EntityField[];
+  timestamps?: boolean;
+  softDelete?: boolean;
+}
+
+export interface CreateEntityDataRequest {
+  data: Record<string, any>;
+}
+
+export interface UpdateEntityDataRequest {
+  data: Record<string, any>;
+}
+
+export interface QueryEntityDataRequest {
+  where?: Record<string, any>;
+  orderBy?: Record<string, 'asc' | 'desc'>;
+  limit?: number;
+  offset?: number;
+  includeDeleted?: boolean;
+}
+
+export interface EntityDataResponse {
+  id: string;
+  data: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface EntityResponse {
+  id: string;
+  name: string;
+  displayName?: string;
+  description?: string;
+  fields: EntityField[];
+  timestamps: boolean;
+  softDelete: boolean;
+  recordCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+export interface BaaSErrorResponse {
+  error: string;
+  message: string;
+  details?: any;
+}

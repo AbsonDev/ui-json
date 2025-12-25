@@ -100,6 +100,9 @@ model App {
   // Mobile builds
   builds      Build[]
 
+  // Backend as a Service - Entities
+  entities    Entity[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -188,4 +191,58 @@ model Build {
   @@index([status])
   @@index([platform])
   @@map("builds")
+}
+
+// ============================================
+// Backend as a Service (BaaS) Models
+// ============================================
+
+model Entity {
+  id          String   @id @default(cuid())
+  name        String   // "Product", "Category", "User", etc.
+  displayName String?  // "Products", "Categories" (plural, user-friendly)
+  description String?  // Description of what this entity represents
+
+  // Schema definition (stored as JSON)
+  fields      Json     // Array of field definitions: [{ name: "title", type: "string", required: true, ... }]
+
+  // Options
+  timestamps  Boolean  @default(true) // Auto-add createdAt/updatedAt fields
+  softDelete  Boolean  @default(false) // Add deletedAt field for soft deletes
+
+  // Relation to app
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Entity data records
+  records     EntityData[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Ensure unique entity names per app
+  @@unique([appId, name])
+  @@index([appId])
+  @@map("entities")
+}
+
+model EntityData {
+  id          String   @id @default(cuid())
+
+  // Data payload (stored as JSON)
+  data        Json     // Actual data: { "title": "iPhone 15", "price": 999, ... }
+
+  // Soft delete support
+  deletedAt   DateTime?
+
+  // Relation to entity
+  entityId    String
+  entity      Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityId])
+  @@index([deletedAt])
+  @@map("entity_data")
 }
