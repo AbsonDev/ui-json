@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import logger, { logError, logUserAction } from '@/lib/logger'
+import { enforceAppLimit, UsageLimitError } from '@/lib/subscription/enforcement'
 
 // Maximum JSON size in bytes (2MB)
 const MAX_JSON_SIZE = 2 * 1024 * 1024
@@ -154,6 +155,9 @@ export async function createApp(data: z.infer<typeof createAppSchema>) {
       throw new Error('Unauthorized: Please log in to create an app')
     }
 
+    // Check usage limits before creating app
+    await enforceAppLimit()
+
     const validated = createAppSchema.parse(data)
 
     const app = await prisma.app.create({
@@ -172,6 +176,10 @@ export async function createApp(data: z.infer<typeof createAppSchema>) {
 
     return app
   } catch (error) {
+    if (error instanceof UsageLimitError) {
+      // Re-throw usage limit errors to be handled by UI
+      throw error
+    }
     if (error instanceof z.ZodError) {
       const firstError = error.errors[0]
       logger.warn('App validation failed', { error: firstError })
