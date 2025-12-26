@@ -305,8 +305,17 @@ describe('useHistory', () => {
 
       act(() => {
         result.current.undo();
+      });
+
+      act(() => {
         result.current.undo();
+      });
+
+      act(() => {
         result.current.undo();
+      });
+
+      act(() => {
         result.current.redo();
       });
 
@@ -374,8 +383,17 @@ describe('useHistory', () => {
 
       act(() => {
         result.current.undo();
+      });
+
+      act(() => {
         result.current.redo();
+      });
+
+      act(() => {
         result.current.undo();
+      });
+
+      act(() => {
         result.current.redo();
       });
 
@@ -451,11 +469,14 @@ describe('useHistory', () => {
 
       act(() => {
         result.current.setState(2);
+      });
+
+      act(() => {
         result.current.undo();
       });
 
       expect(result.current.state).toBe(1);
-      // After undo, there should be something in future to redo
+      expect(result.current.canRedo).toBe(true);
     });
 
     it('should clear canRedo when new state is set', () => {
@@ -463,6 +484,9 @@ describe('useHistory', () => {
 
       act(() => {
         result.current.setState(2);
+      });
+
+      act(() => {
         result.current.undo();
       });
 
