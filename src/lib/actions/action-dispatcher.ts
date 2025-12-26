@@ -13,14 +13,16 @@ import { handlePopup } from './handlers/popup-handler';
 import { handleSubmit } from './handlers/submit-handler';
 import { handleDeleteRecord } from './handlers/database-handler';
 import { handleAuthLogin, handleAuthSignup, handleAuthLogout } from './handlers/auth-handler';
+import { handleAI } from './handlers/ai-handler';
 
 /**
  * Type for action handler functions
+ * Can be sync or async
  */
 type ActionHandler<T extends UIAction = UIAction> = (
   action: T,
   context: ActionContext
-) => void;
+) => void | Promise<void>;
 
 /**
  * Registry of action handlers
@@ -35,6 +37,7 @@ const actionHandlers: Record<UIAction['type'], ActionHandler<any>> = {
   'auth:login': handleAuthLogin,
   'auth:signup': handleAuthSignup,
   'auth:logout': handleAuthLogout,
+  ai: handleAI,
 };
 
 /**
@@ -43,7 +46,7 @@ const actionHandlers: Record<UIAction['type'], ActionHandler<any>> = {
  * @param action - The action to dispatch
  * @param context - The context containing state and callbacks
  */
-export function dispatchAction(action: UIAction, context: ActionContext): void {
+export async function dispatchAction(action: UIAction, context: ActionContext): Promise<void> {
   if (!action || !action.type) {
     console.warn('Invalid action:', action);
     return;
@@ -53,7 +56,7 @@ export function dispatchAction(action: UIAction, context: ActionContext): void {
 
   if (handler) {
     try {
-      handler(action, context);
+      await handler(action, context);
     } catch (error) {
       console.error(`Error handling action ${action.type}:`, error);
     }
