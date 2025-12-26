@@ -52,12 +52,14 @@ const nextConfig = {
     domains: [],
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  // Optimize production builds
-  swcMinify: true,
   // Compress responses
   compress: true,
   // Power by header removal
   poweredByHeader: false,
+  // Enable instrumentation for monitoring
+  experimental: {
+    instrumentationHook: true,
+  },
 }
 
 // Sentry configuration options

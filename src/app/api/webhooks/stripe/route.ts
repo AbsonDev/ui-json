@@ -210,7 +210,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     // Track subscription cancellation
     const subscriptionData = await prisma.subscription.findUnique({
       where: { stripeSubscriptionId: subscription.id },
-      select: { createdAt: true }
+      select: { createdAt: true, currentPeriodEnd: true }
     })
 
     const monthsSubscribed = subscriptionData
@@ -229,6 +229,35 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       planTier: 'FREE',
       canceledDate: new Date().toISOString(),
     })
+
+    // Send cancellation email
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true }
+    })
+
+    if (user && subscriptionData) {
+      const { sendEmail } = await import('@/lib/email/config')
+      const { getSubscriptionCanceledEmailTemplate } = await import('@/lib/email/payment-templates')
+
+      const endDate = subscriptionData.currentPeriodEnd.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      })
+
+      await sendEmail({
+        to: user.email,
+        subject: '📋 Assinatura Cancelada - UI-JSON Visualizer',
+        html: getSubscriptionCanceledEmailTemplate(
+          user.name || 'Cliente',
+          planTier || 'PRO',
+          endDate
+        )
+      })
+
+      console.log(`✉️ Subscription canceled email sent to ${user.email}`)
+    }
   }
 }
 
@@ -267,6 +296,35 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
       paidAt: new Date(invoice.status_transitions.paid_at! * 1000),
     }
   })
+
+  // Send payment success email
+  const user = await prisma.user.findUnique({
+    where: { id: finalUserId },
+    select: { email: true, name: true }
+  })
+
+  const subscription = await prisma.subscription.findFirst({
+    where: { userId: finalUserId },
+    select: { planTier: true }
+  })
+
+  if (user && invoice.hosted_invoice_url) {
+    const { sendEmail } = await import('@/lib/email/config')
+    const { getPaymentSuccessEmailTemplate } = await import('@/lib/email/payment-templates')
+
+    await sendEmail({
+      to: user.email,
+      subject: '✅ Pagamento Confirmado - UI-JSON Visualizer',
+      html: getPaymentSuccessEmailTemplate(
+        user.name || 'Cliente',
+        subscription?.planTier || 'PRO',
+        invoice.amount_paid / 100,
+        invoice.hosted_invoice_url
+      )
+    })
+
+    console.log(`✉️ Payment success email sent to ${user.email}`)
+  }
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -292,8 +350,29 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     reason: invoice.last_finalization_error?.message || 'Unknown',
   })
 
-  // TODO: Send email notification to user
-  console.warn(`Payment failed for user ${userId}`)
+  // Send email notification to user
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true }
+  })
+
+  if (user) {
+    const { sendEmail } = await import('@/lib/email/config')
+    const { getPaymentFailedEmailTemplate } = await import('@/lib/email/payment-templates')
+
+    await sendEmail({
+      to: user.email,
+      subject: '⚠️ Falha no Pagamento - UI-JSON Visualizer',
+      html: getPaymentFailedEmailTemplate(
+        user.name || 'Cliente',
+        subscription?.planTier || 'UNKNOWN',
+        invoice.amount_due / 100,
+        invoice.last_finalization_error?.message || 'Erro ao processar pagamento'
+      )
+    })
+
+    console.log(`✉️ Payment failed email sent to ${user.email}`)
+  }
 }
 
 function mapStripeStatus(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'INCOMPLETE' | 'INCOMPLETE_EXPIRED' | 'TRIALING' | 'UNPAID' {
