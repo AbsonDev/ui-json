@@ -10,97 +10,15 @@ import { useSession } from '../hooks/useSession';
 import { Renderer } from './Renderer';
 import { DesignTokensContext } from '../App';
 
-// --- Helper Functions ---
-const resolveToken = (value: any, tokens: Record<string, any>): any => {
-    if (typeof value === 'string' && value.startsWith('$')) {
-        const tokenName = value.substring(1);
-        return tokens[tokenName] || value;
-    }
-    return value;
-};
-
-const getMarginStyles = (component: UIComponent, tokens: Record<string, any>) => ({
-  marginTop: resolveToken(component.marginTop, tokens),
-  marginBottom: resolveToken(component.marginBottom, tokens),
-  marginLeft: resolveToken(component.marginLeft, tokens),
-  marginRight: resolveToken(component.marginRight, tokens),
-});
-
-const getButtonClasses = (variant: ButtonVariant = 'primary', size: ButtonSize = 'medium', fullWidth = false) => {
-    let classes = 'rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200';
-    if (fullWidth) classes += ' w-full';
-
-    switch (size) {
-        case 'small': classes += ' px-3 py-1.5 text-xs'; break;
-        case 'medium': classes += ' px-4 py-2 text-sm'; break;
-        case 'large': classes += ' px-6 py-3 text-base'; break;
-    }
-
-    switch (variant) {
-        case 'primary': classes += ' bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'; break;
-        case 'secondary': classes += ' bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500'; break;
-        case 'outline': classes += ' border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-blue-500'; break;
-        case 'text': classes += ' text-blue-600 hover:bg-blue-50'; break;
-    }
-    return classes;
-}
-
-const getLayoutClasses = (layout: Layout = 'vertical', alignment?: Alignment) => {
-    const base = layout === 'horizontal' ? 'flex flex-row' : 'flex flex-col';
-    let alignClass = '';
-    switch(alignment) {
-        case 'start': alignClass = 'items-start justify-start'; break;
-        case 'center': alignClass = 'items-center justify-center'; break;
-        case 'end': alignClass = 'items-end justify-end'; break;
-        case 'space-between': alignClass = 'justify-between'; break;
-        case 'space-around': alignClass = 'justify-around'; break;
-    }
-    return `${base} ${alignClass}`;
-}
-
-const mapResizeModeToObjectFit = (resizeMode?: ImageResizeMode): React.CSSProperties['objectFit'] => {
-  switch (resizeMode) {
-    case 'cover':
-      return 'cover';
-    case 'contain':
-      return 'contain';
-    case 'stretch':
-      return 'fill';
-    case 'center':
-      return 'none';
-    default:
-      return 'contain';
-  }
-};
-
-const resolveTemplate = (template: any, dataContext: Record<string, any>): any => {
-    if (typeof template === 'string') {
-        return template.replace(/{{(.*?)}}/g, (_, key) => {
-            const keys = key.trim().split('.');
-            let value = dataContext;
-            for (const k of keys) {
-                if (value && typeof value === 'object' && k in value) {
-                    value = value[k];
-                } else {
-                    return ''; // Path not found
-                }
-            }
-            // FIX: Ensure the returned value is a string for the replace function.
-            return String(value ?? '');
-        });
-    }
-    if (Array.isArray(template)) {
-        return template.map(item => resolveTemplate(item, dataContext));
-    }
-    if (typeof template === 'object' && template !== null) {
-        const resolvedObject: { [key: string]: any } = {};
-        for (const key in template) {
-            resolvedObject[key] = resolveTemplate(template[key], dataContext);
-        }
-        return resolvedObject;
-    }
-    return template;
-};
+// Import shared utilities
+import { resolveToken } from '../lib/utils/design-tokens';
+import { resolveTemplate } from '../lib/utils/template-engine';
+import {
+  getMarginStyles,
+  getButtonClasses,
+  getLayoutClasses,
+  mapResizeModeToObjectFit,
+} from '../lib/utils/style-helpers';
 
 // --- Component Wrapper for Conditional Rendering ---
 const ConditionalRenderer: React.FC<{ component: UIComponent, children: React.ReactNode }> = ({ component, children }) => {
