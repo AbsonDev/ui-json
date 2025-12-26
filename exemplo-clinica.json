@@ -1,0 +1,610 @@
+{
+  "name": "Clínica Saúde Total",
+  "initialScreen": "home",
+  "theme": {
+    "primaryColor": "#2563eb",
+    "secondaryColor": "#10b981",
+    "backgroundColor": "#f9fafb"
+  },
+  "screens": [
+    {
+      "id": "home",
+      "name": "Início",
+      "components": [
+        {
+          "type": "UIContainer",
+          "layout": "vertical",
+          "style": {
+            "padding": 20,
+            "gap": 20
+          },
+          "children": [
+            {
+              "type": "UIImage",
+              "src": "https://via.placeholder.com/300x100/2563eb/ffffff?text=Clínica+Saúde+Total",
+              "style": {
+                "width": "100%",
+                "borderRadius": 10
+              }
+            },
+            {
+              "type": "UIText",
+              "text": "Bem-vindo!",
+              "style": {
+                "fontSize": 28,
+                "fontWeight": "bold",
+                "color": "#1f2937"
+              }
+            },
+            {
+              "type": "UIText",
+              "text": "Agende sua consulta de forma rápida e fácil",
+              "style": {
+                "fontSize": 16,
+                "color": "#6b7280"
+              }
+            },
+            {
+              "type": "UICard",
+              "style": {
+                "padding": 20,
+                "backgroundColor": "#eff6ff",
+                "borderRadius": 12
+              },
+              "children": [
+                {
+                  "type": "UIText",
+                  "text": "🩺 Especialidades Disponíveis",
+                  "style": {
+                    "fontSize": 18,
+                    "fontWeight": "bold",
+                    "marginBottom": 10
+                  }
+                },
+                {
+                  "type": "UIList",
+                  "items": [
+                    "Clínica Geral",
+                    "Cardiologia",
+                    "Dermatologia",
+                    "Pediatria",
+                    "Ortopedia"
+                  ],
+                  "renderItem": {
+                    "type": "UIText",
+                    "text": "{{item}}",
+                    "style": {
+                      "fontSize": 16,
+                      "padding": 8,
+                      "color": "#374151"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "UIButton",
+              "text": "📅 Agendar Consulta",
+              "action": {
+                "type": "navigate",
+                "target": "agendar"
+              },
+              "style": {
+                "backgroundColor": "#2563eb",
+                "color": "white",
+                "padding": 16,
+                "borderRadius": 8,
+                "fontSize": 18,
+                "fontWeight": "bold"
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "📋 Minhas Consultas",
+              "action": {
+                "type": "navigate",
+                "target": "consultas"
+              },
+              "style": {
+                "backgroundColor": "#10b981",
+                "color": "white",
+                "padding": 16,
+                "borderRadius": 8,
+                "fontSize": 18,
+                "fontWeight": "bold"
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "👤 Meu Perfil",
+              "action": {
+                "type": "navigate",
+                "target": "perfil"
+              },
+              "style": {
+                "backgroundColor": "#6b7280",
+                "color": "white",
+                "padding": 16,
+                "borderRadius": 8,
+                "fontSize": 18,
+                "fontWeight": "bold"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agendar",
+      "name": "Agendar Consulta",
+      "components": [
+        {
+          "type": "UIContainer",
+          "layout": "vertical",
+          "style": {
+            "padding": 20,
+            "gap": 16
+          },
+          "children": [
+            {
+              "type": "UIText",
+              "text": "📅 Agendar Consulta",
+              "style": {
+                "fontSize": 24,
+                "fontWeight": "bold",
+                "color": "#1f2937",
+                "marginBottom": 10
+              }
+            },
+            {
+              "type": "UISelect",
+              "id": "especialidade",
+              "label": "Especialidade",
+              "placeholder": "Selecione a especialidade",
+              "options": [
+                {"label": "Clínica Geral", "value": "geral"},
+                {"label": "Cardiologia", "value": "cardio"},
+                {"label": "Dermatologia", "value": "derma"},
+                {"label": "Pediatria", "value": "pediatria"},
+                {"label": "Ortopedia", "value": "ortopedia"}
+              ],
+              "required": true,
+              "style": {
+                "fontSize": 16
+              }
+            },
+            {
+              "type": "UISelect",
+              "id": "medico",
+              "label": "Médico(a)",
+              "placeholder": "Selecione o médico",
+              "options": [
+                {"label": "Dr. João Silva (Cardiologista)", "value": "joao"},
+                {"label": "Dra. Maria Santos (Dermatologista)", "value": "maria"},
+                {"label": "Dr. Pedro Costa (Pediatra)", "value": "pedro"},
+                {"label": "Dra. Ana Oliveira (Ortopedista)", "value": "ana"}
+              ],
+              "required": true,
+              "style": {
+                "fontSize": 16
+              }
+            },
+            {
+              "type": "UIDatePicker",
+              "id": "data",
+              "label": "Data da Consulta",
+              "minDate": "today",
+              "required": true,
+              "style": {
+                "fontSize": 16
+              }
+            },
+            {
+              "type": "UITimePicker",
+              "id": "horario",
+              "label": "Horário",
+              "required": true,
+              "style": {
+                "fontSize": 16
+              }
+            },
+            {
+              "type": "UIInput",
+              "id": "observacoes",
+              "label": "Observações (opcional)",
+              "placeholder": "Ex: primeira consulta, retorno, etc",
+              "multiline": true,
+              "rows": 3,
+              "style": {
+                "fontSize": 16
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "✅ Confirmar Agendamento",
+              "action": {
+                "type": "submit",
+                "endpoint": "/api/agendamentos",
+                "method": "POST",
+                "data": {
+                  "especialidade": "{{especialidade}}",
+                  "medico": "{{medico}}",
+                  "data": "{{data}}",
+                  "horario": "{{horario}}",
+                  "observacoes": "{{observacoes}}"
+                },
+                "onSuccess": {
+                  "type": "navigate",
+                  "target": "confirmacao"
+                }
+              },
+              "style": {
+                "backgroundColor": "#10b981",
+                "color": "white",
+                "padding": 16,
+                "borderRadius": 8,
+                "fontSize": 18,
+                "fontWeight": "bold"
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "← Voltar",
+              "action": {
+                "type": "navigate",
+                "target": "home"
+              },
+              "style": {
+                "backgroundColor": "#e5e7eb",
+                "color": "#374151",
+                "padding": 12,
+                "borderRadius": 8,
+                "fontSize": 16
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "consultas",
+      "name": "Minhas Consultas",
+      "database": {
+        "table": "agendamentos",
+        "filter": {
+          "userId": "{{currentUser.id}}"
+        }
+      },
+      "components": [
+        {
+          "type": "UIContainer",
+          "layout": "vertical",
+          "style": {
+            "padding": 20,
+            "gap": 16
+          },
+          "children": [
+            {
+              "type": "UIText",
+              "text": "📋 Minhas Consultas",
+              "style": {
+                "fontSize": 24,
+                "fontWeight": "bold",
+                "color": "#1f2937",
+                "marginBottom": 10
+              }
+            },
+            {
+              "type": "UIList",
+              "dataSource": "agendamentos",
+              "emptyMessage": "Você não tem consultas agendadas",
+              "renderItem": {
+                "type": "UICard",
+                "style": {
+                  "padding": 16,
+                  "marginBottom": 12,
+                  "backgroundColor": "#ffffff",
+                  "borderRadius": 8,
+                  "borderLeft": "4px solid #2563eb"
+                },
+                "children": [
+                  {
+                    "type": "UIText",
+                    "text": "{{item.especialidade}}",
+                    "style": {
+                      "fontSize": 18,
+                      "fontWeight": "bold",
+                      "color": "#2563eb",
+                      "marginBottom": 8
+                    }
+                  },
+                  {
+                    "type": "UIText",
+                    "text": "Médico: {{item.medico}}",
+                    "style": {
+                      "fontSize": 16,
+                      "color": "#374151",
+                      "marginBottom": 4
+                    }
+                  },
+                  {
+                    "type": "UIText",
+                    "text": "📅 Data: {{item.data}} às {{item.horario}}",
+                    "style": {
+                      "fontSize": 16,
+                      "color": "#6b7280",
+                      "marginBottom": 4
+                    }
+                  },
+                  {
+                    "type": "UIText",
+                    "text": "Status: {{item.status}}",
+                    "style": {
+                      "fontSize": 14,
+                      "color": "#10b981",
+                      "fontWeight": "bold"
+                    }
+                  },
+                  {
+                    "type": "UIButton",
+                    "text": "Cancelar Consulta",
+                    "action": {
+                      "type": "popup",
+                      "message": "Deseja realmente cancelar esta consulta?",
+                      "confirmAction": {
+                        "type": "submit",
+                        "endpoint": "/api/agendamentos/{{item.id}}/cancelar",
+                        "method": "DELETE"
+                      }
+                    },
+                    "style": {
+                      "backgroundColor": "#ef4444",
+                      "color": "white",
+                      "padding": 8,
+                      "borderRadius": 6,
+                      "fontSize": 14,
+                      "marginTop": 8
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "← Voltar",
+              "action": {
+                "type": "navigate",
+                "target": "home"
+              },
+              "style": {
+                "backgroundColor": "#e5e7eb",
+                "color": "#374151",
+                "padding": 12,
+                "borderRadius": 8,
+                "fontSize": 16
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "perfil",
+      "name": "Meu Perfil",
+      "components": [
+        {
+          "type": "UIContainer",
+          "layout": "vertical",
+          "style": {
+            "padding": 20,
+            "gap": 16
+          },
+          "children": [
+            {
+              "type": "UIText",
+              "text": "👤 Meu Perfil",
+              "style": {
+                "fontSize": 24,
+                "fontWeight": "bold",
+                "color": "#1f2937",
+                "marginBottom": 10
+              }
+            },
+            {
+              "type": "UICard",
+              "style": {
+                "padding": 20,
+                "backgroundColor": "#ffffff",
+                "borderRadius": 12
+              },
+              "children": [
+                {
+                  "type": "UIInput",
+                  "id": "nome",
+                  "label": "Nome Completo",
+                  "placeholder": "Seu nome",
+                  "value": "{{currentUser.name}}",
+                  "required": true
+                },
+                {
+                  "type": "UIInput",
+                  "id": "cpf",
+                  "label": "CPF",
+                  "placeholder": "000.000.000-00",
+                  "inputType": "text",
+                  "required": true
+                },
+                {
+                  "type": "UIInput",
+                  "id": "email",
+                  "label": "Email",
+                  "placeholder": "seu@email.com",
+                  "inputType": "email",
+                  "value": "{{currentUser.email}}",
+                  "required": true
+                },
+                {
+                  "type": "UIInput",
+                  "id": "telefone",
+                  "label": "Telefone",
+                  "placeholder": "(00) 00000-0000",
+                  "inputType": "phone",
+                  "required": true
+                },
+                {
+                  "type": "UIDatePicker",
+                  "id": "nascimento",
+                  "label": "Data de Nascimento",
+                  "required": true
+                },
+                {
+                  "type": "UIInput",
+                  "id": "endereco",
+                  "label": "Endereço",
+                  "placeholder": "Rua, número, bairro",
+                  "multiline": true,
+                  "rows": 2
+                },
+                {
+                  "type": "UIButton",
+                  "text": "💾 Salvar Alterações",
+                  "action": {
+                    "type": "submit",
+                    "endpoint": "/api/perfil",
+                    "method": "PUT",
+                    "data": {
+                      "nome": "{{nome}}",
+                      "cpf": "{{cpf}}",
+                      "email": "{{email}}",
+                      "telefone": "{{telefone}}",
+                      "nascimento": "{{nascimento}}",
+                      "endereco": "{{endereco}}"
+                    },
+                    "onSuccess": {
+                      "type": "popup",
+                      "message": "Perfil atualizado com sucesso!"
+                    }
+                  },
+                  "style": {
+                    "backgroundColor": "#2563eb",
+                    "color": "white",
+                    "padding": 16,
+                    "borderRadius": 8,
+                    "fontSize": 18,
+                    "fontWeight": "bold",
+                    "marginTop": 16
+                  }
+                }
+              ]
+            },
+            {
+              "type": "UIButton",
+              "text": "🚪 Sair",
+              "action": {
+                "type": "auth",
+                "action": "logout"
+              },
+              "style": {
+                "backgroundColor": "#ef4444",
+                "color": "white",
+                "padding": 12,
+                "borderRadius": 8,
+                "fontSize": 16
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "← Voltar",
+              "action": {
+                "type": "navigate",
+                "target": "home"
+              },
+              "style": {
+                "backgroundColor": "#e5e7eb",
+                "color": "#374151",
+                "padding": 12,
+                "borderRadius": 8,
+                "fontSize": 16
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "confirmacao",
+      "name": "Confirmação",
+      "components": [
+        {
+          "type": "UIContainer",
+          "layout": "vertical",
+          "style": {
+            "padding": 20,
+            "gap": 20,
+            "alignItems": "center"
+          },
+          "children": [
+            {
+              "type": "UIText",
+              "text": "✅",
+              "style": {
+                "fontSize": 64
+              }
+            },
+            {
+              "type": "UIText",
+              "text": "Consulta Agendada!",
+              "style": {
+                "fontSize": 28,
+                "fontWeight": "bold",
+                "color": "#10b981",
+                "textAlign": "center"
+              }
+            },
+            {
+              "type": "UIText",
+              "text": "Você receberá um email de confirmação com todos os detalhes da sua consulta.",
+              "style": {
+                "fontSize": 16,
+                "color": "#6b7280",
+                "textAlign": "center",
+                "marginBottom": 20
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "Ver Minhas Consultas",
+              "action": {
+                "type": "navigate",
+                "target": "consultas"
+              },
+              "style": {
+                "backgroundColor": "#2563eb",
+                "color": "white",
+                "padding": 16,
+                "borderRadius": 8,
+                "fontSize": 18,
+                "fontWeight": "bold"
+              }
+            },
+            {
+              "type": "UIButton",
+              "text": "← Voltar ao Início",
+              "action": {
+                "type": "navigate",
+                "target": "home"
+              },
+              "style": {
+                "backgroundColor": "#e5e7eb",
+                "color": "#374151",
+                "padding": 12,
+                "borderRadius": 8,
+                "fontSize": 16
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

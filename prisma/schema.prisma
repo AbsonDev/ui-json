@@ -39,8 +39,10 @@ model User {
   usageMetrics       UsageMetric[]        // Usage tracking
   invoices           Invoice[]            // Billing invoices
   emailLogs          EmailLog[]           // Email communication logs
-  aiUsage            AIUsage[]            // AI request tracking
-  aiDailyLimits      AIDailyLimit[]       // AI daily limit tracking
+  aiUsage            AIUsage[]            // AI request tracking (for editor)
+  aiDailyLimits      AIDailyLimit[]       // AI daily limit tracking (for editor)
+  appAIUsage         AppAIUsage[]         // AI usage in client apps
+  aiExecutionLimits  AIExecutionLimit[]   // AI execution limits for client apps
 
   @@index([email, isAdmin]) // Composite index for admin queries
   @@index([createdAt]) // Index for sorting by creation date
@@ -127,6 +129,9 @@ model App {
 
   // Mobile builds
   builds      Build[]
+
+  // AI usage in this app
+  appAIUsage  AppAIUsage[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -494,4 +499,71 @@ model AIDailyLimit {
   @@index([userId, date])
   @@index([date])
   @@map("ai_daily_limits")
+}
+
+// ============================================
+// AI Usage in Client Apps
+// ============================================
+
+model AppAIUsage {
+  id          String   @id @default(cuid())
+
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // AI execution details
+  aiAction    String   // "chat", "analyze", "suggest", "classify", "generate"
+  prompt      String   @db.Text
+  result      String   @db.Text
+
+  // Context (formData, etc)
+  context     String?  @db.Text
+
+  // Performance metrics
+  tokensUsed  Int?
+  responseTime Int?    // milliseconds
+
+  // Success tracking
+  wasSuccessful Boolean @default(false)
+  errorMessage  String? @db.Text
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([appId])
+  @@index([userId, appId])
+  @@index([aiAction])
+  @@index([createdAt])
+  @@index([wasSuccessful])
+  @@map("app_ai_usage")
+}
+
+// ============================================
+// AI Execution Limits (Monthly)
+// ============================================
+
+model AIExecutionLimit {
+  id              String   @id @default(cuid())
+
+  // User relation
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Monthly tracking
+  month           DateTime @default(now()) @db.Date
+  executionCount  Int      @default(0)
+  maxExecutions   Int      // Based on user's plan tier
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, month])
+  @@index([userId, month])
+  @@index([month])
+  @@map("ai_execution_limits")
 }
