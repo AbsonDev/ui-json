@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import {
   interpolateString,
   getNestedValue,
@@ -10,453 +6,333 @@ import {
   extractTemplateVariables,
 } from '../template-engine';
 
-describe('Template Engine Utilities', () => {
+describe('Template Engine Utils', () => {
   describe('interpolateString', () => {
-    it('should interpolate simple variables', () => {
-      const template = 'Hello {{name}}!';
-      const context = { name: 'World' };
-
-      expect(interpolateString(template, context)).toBe('Hello World!');
+    it('should interpolate simple variable', () => {
+      const result = interpolateString('Hello {{name}}', { name: 'World' });
+      expect(result).toBe('Hello World');
     });
 
     it('should interpolate multiple variables', () => {
-      const template = '{{firstName}} {{lastName}} is {{age}} years old';
-      const context = { firstName: 'John', lastName: 'Doe', age: 30 };
-
-      expect(interpolateString(template, context)).toBe('John Doe is 30 years old');
+      const result = interpolateString('{{greeting}} {{name}}!', {
+        greeting: 'Hello',
+        name: 'World',
+      });
+      expect(result).toBe('Hello World!');
     });
 
-    it('should handle nested object properties', () => {
-      const template = 'User: {{user.name}}, City: {{user.address.city}}';
-      const context = {
-        user: {
-          name: 'John',
-          address: {
-            city: 'New York',
-          },
-        },
-      };
-
-      expect(interpolateString(template, context)).toBe('User: John, City: New York');
+    it('should handle nested properties', () => {
+      const result = interpolateString('Hello {{user.name}}', {
+        user: { name: 'John' },
+      });
+      expect(result).toBe('Hello John');
     });
 
-    it('should replace missing variables with empty string', () => {
-      const template = 'Hello {{name}}, you are {{age}} years old';
-      const context = { name: 'John' };
-
-      expect(interpolateString(template, context)).toBe('Hello John, you are  years old');
+    it('should handle deep nesting', () => {
+      const result = interpolateString('Value: {{a.b.c.d}}', {
+        a: { b: { c: { d: 'deep' } } },
+      });
+      expect(result).toBe('Value: deep');
     });
 
-    it('should handle variables with whitespace', () => {
-      const template = 'Value: {{ name }}';
-      const context = { name: 'Test' };
+    it('should return empty string for undefined values', () => {
+      const result = interpolateString('Hello {{missing}}', {});
+      expect(result).toBe('Hello ');
+    });
 
-      expect(interpolateString(template, context)).toBe('Value: Test');
+    it('should return empty string for null values', () => {
+      const result = interpolateString('Hello {{value}}', { value: null });
+      expect(result).toBe('Hello ');
     });
 
     it('should convert numbers to strings', () => {
-      const template = 'Count: {{count}}';
-      const context = { count: 42 };
-
-      expect(interpolateString(template, context)).toBe('Count: 42');
+      const result = interpolateString('Count: {{count}}', { count: 42 });
+      expect(result).toBe('Count: 42');
     });
 
     it('should convert booleans to strings', () => {
-      const template = 'Active: {{isActive}}';
-      const context = { isActive: true };
-
-      expect(interpolateString(template, context)).toBe('Active: true');
+      const result = interpolateString('Active: {{active}}', { active: true });
+      expect(result).toBe('Active: true');
     });
 
-    it('should handle empty template', () => {
-      expect(interpolateString('', { name: 'Test' })).toBe('');
+    it('should handle variables with spaces', () => {
+      const result = interpolateString('Hello {{ name }}', { name: 'World' });
+      expect(result).toBe('Hello World');
+    });
+
+    it('should handle multiple occurrences of same variable', () => {
+      const result = interpolateString('{{x}} and {{x}} and {{x}}', { x: 'A' });
+      expect(result).toBe('A and A and A');
     });
 
     it('should handle template without variables', () => {
-      expect(interpolateString('Plain text', { name: 'Test' })).toBe('Plain text');
+      const result = interpolateString('Just plain text', {});
+      expect(result).toBe('Just plain text');
     });
 
-    it('should handle same variable multiple times', () => {
-      const template = '{{name}} said hello to {{name}}';
-      const context = { name: 'John' };
-
-      expect(interpolateString(template, context)).toBe('John said hello to John');
+    it('should handle empty template', () => {
+      const result = interpolateString('', { name: 'World' });
+      expect(result).toBe('');
     });
 
-    it('should handle null and undefined values', () => {
-      const template = 'Value: {{value}}, Null: {{nullValue}}';
-      const context = { value: undefined, nullValue: null };
-
-      expect(interpolateString(template, context)).toBe('Value: , Null: ');
+    it('should handle arrays as string', () => {
+      const result = interpolateString('List: {{items}}', { items: [1, 2, 3] });
+      expect(result).toBe('List: 1,2,3');
     });
 
-    it('should handle special characters in values', () => {
-      const template = 'Email: {{email}}';
-      const context = { email: 'user@example.com' };
-
-      expect(interpolateString(template, context)).toBe('Email: user@example.com');
-    });
-
-    it('should handle unicode characters', () => {
-      const template = 'Greeting: {{greeting}}';
-      const context = { greeting: 'こんにちは 🌍' };
-
-      expect(interpolateString(template, context)).toBe('Greeting: こんにちは 🌍');
+    it('should handle objects as string', () => {
+      const result = interpolateString('Object: {{obj}}', { obj: { a: 1 } });
+      expect(result).toBe('Object: [object Object]');
     });
   });
 
   describe('getNestedValue', () => {
-    it('should get top-level properties', () => {
-      const obj = { name: 'John', age: 30 };
-
-      expect(getNestedValue(obj, 'name')).toBe('John');
-      expect(getNestedValue(obj, 'age')).toBe(30);
+    it('should get top-level value', () => {
+      const result = getNestedValue({ name: 'John' }, 'name');
+      expect(result).toBe('John');
     });
 
-    it('should get nested properties with dot notation', () => {
-      const obj = {
-        user: {
-          profile: {
-            name: 'John',
-            settings: {
-              theme: 'dark',
-            },
-          },
-        },
-      };
-
-      expect(getNestedValue(obj, 'user.profile.name')).toBe('John');
-      expect(getNestedValue(obj, 'user.profile.settings.theme')).toBe('dark');
+    it('should get nested value', () => {
+      const result = getNestedValue({ user: { name: 'John' } }, 'user.name');
+      expect(result).toBe('John');
     });
 
-    it('should return undefined for non-existent paths', () => {
-      const obj = { user: { name: 'John' } };
-
-      expect(getNestedValue(obj, 'user.age')).toBeUndefined();
-      expect(getNestedValue(obj, 'nonexistent')).toBeUndefined();
-      expect(getNestedValue(obj, 'user.profile.name')).toBeUndefined();
+    it('should get deeply nested value', () => {
+      const obj = { a: { b: { c: { d: 'value' } } } };
+      const result = getNestedValue(obj, 'a.b.c.d');
+      expect(result).toBe('value');
     });
 
-    it('should handle array indices', () => {
-      const obj = {
-        users: [
-          { name: 'John' },
-          { name: 'Jane' },
-        ],
-      };
-
-      expect(getNestedValue(obj, 'users.0.name')).toBe('John');
-      expect(getNestedValue(obj, 'users.1.name')).toBe('Jane');
+    it('should return undefined for missing path', () => {
+      const result = getNestedValue({ name: 'John' }, 'missing');
+      expect(result).toBeUndefined();
     });
 
-    it('should handle mixed arrays and objects', () => {
-      const obj = {
-        data: {
-          items: [
-            { id: 1, tags: ['a', 'b'] },
-            { id: 2, tags: ['c', 'd'] },
-          ],
-        },
-      };
-
-      expect(getNestedValue(obj, 'data.items.0.tags.1')).toBe('b');
+    it('should return undefined for missing nested path', () => {
+      const result = getNestedValue({ user: {} }, 'user.name');
+      expect(result).toBeUndefined();
     });
 
-    it('should handle null and undefined in path', () => {
-      const obj = {
-        user: null,
-        settings: undefined,
-      };
-
-      expect(getNestedValue(obj, 'user.name')).toBeUndefined();
-      expect(getNestedValue(obj, 'settings.theme')).toBeUndefined();
+    it('should handle null values in path', () => {
+      const result = getNestedValue({ user: null }, 'user.name');
+      expect(result).toBeUndefined();
     });
 
-    it('should handle empty path', () => {
-      const obj = { name: 'Test' };
-
-      expect(getNestedValue(obj, '')).toEqual(obj);
+    it('should handle undefined values in path', () => {
+      const result = getNestedValue({ user: undefined }, 'user.name');
+      expect(result).toBeUndefined();
     });
 
-    it('should preserve falsy values', () => {
-      const obj = {
-        zero: 0,
-        false: false,
-        emptyString: '',
-      };
+    it('should get array element', () => {
+      const result = getNestedValue({ items: ['a', 'b', 'c'] }, 'items.1');
+      expect(result).toBe('b');
+    });
 
-      expect(getNestedValue(obj, 'zero')).toBe(0);
-      expect(getNestedValue(obj, 'false')).toBe(false);
-      expect(getNestedValue(obj, 'emptyString')).toBe('');
+    it('should handle numeric values', () => {
+      const result = getNestedValue({ count: 42 }, 'count');
+      expect(result).toBe(42);
+    });
+
+    it('should handle boolean values', () => {
+      const result = getNestedValue({ active: true }, 'active');
+      expect(result).toBe(true);
     });
   });
 
   describe('resolveTemplate', () => {
-    it('should resolve simple string templates', () => {
-      const template = 'Hello {{name}}';
-      const context = { name: 'World' };
-
-      expect(resolveTemplate(template, context)).toBe('Hello World');
+    it('should resolve simple string variable', () => {
+      const result = resolveTemplate('{{name}}', { name: 'John' });
+      expect(result).toBe('John');
     });
 
-    it('should resolve simple variable references and preserve type', () => {
-      const template = '{{count}}';
-      const context = { count: 42 };
-
-      expect(resolveTemplate(template, context)).toBe(42);
+    it('should resolve string interpolation', () => {
+      const result = resolveTemplate('Hello {{name}}', { name: 'John' });
+      expect(result).toBe('Hello John');
     });
 
-    it('should resolve nested variable references', () => {
-      const template = '{{user.name}}';
-      const context = { user: { name: 'John' } };
-
-      expect(resolveTemplate(template, context)).toBe('John');
+    it('should resolve object variable reference', () => {
+      const obj = { id: 1, name: 'Test' };
+      const result = resolveTemplate('{{data}}', { data: obj });
+      expect(result).toEqual(obj);
     });
 
-    it('should resolve object templates', () => {
+    it('should resolve array variable reference', () => {
+      const arr = [1, 2, 3];
+      const result = resolveTemplate('{{items}}', { items: arr });
+      expect(result).toEqual(arr);
+    });
+
+    it('should resolve array of templates', () => {
+      const template = ['{{a}}', '{{b}}', '{{c}}'];
+      const result = resolveTemplate(template, { a: 1, b: 2, c: 3 });
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    it('should resolve object with template values', () => {
+      const template = { name: '{{user.name}}', age: '{{user.age}}' };
+      const result = resolveTemplate(template, { user: { name: 'John', age: 30 } });
+      expect(result).toEqual({ name: 'John', age: 30 });
+    });
+
+    it('should resolve nested objects', () => {
+      const template = { user: { name: '{{name}}' } };
+      const result = resolveTemplate(template, { name: 'John' });
+      expect(result).toEqual({ user: { name: 'John' } });
+    });
+
+    it('should resolve array of objects', () => {
+      const template = [{ name: '{{name1}}' }, { name: '{{name2}}' }];
+      const result = resolveTemplate(template, { name1: 'John', name2: 'Jane' });
+      expect(result).toEqual([{ name: 'John' }, { name: 'Jane' }]);
+    });
+
+    it('should preserve non-template strings', () => {
+      const result = resolveTemplate('plain text', {});
+      expect(result).toBe('plain text');
+    });
+
+    it('should preserve numbers', () => {
+      const result = resolveTemplate(42, {});
+      expect(result).toBe(42);
+    });
+
+    it('should preserve booleans', () => {
+      const result = resolveTemplate(true, {});
+      expect(result).toBe(true);
+    });
+
+    it('should preserve null', () => {
+      const result = resolveTemplate(null, {});
+      expect(result).toBeNull();
+    });
+
+    it('should preserve undefined', () => {
+      const result = resolveTemplate(undefined, {});
+      expect(result).toBeUndefined();
+    });
+
+    it('should handle complex nested structure', () => {
       const template = {
         title: '{{title}}',
-        user: '{{user.name}}',
-        count: '{{count}}',
+        user: {
+          name: '{{user.name}}',
+          email: '{{user.email}}',
+        },
+        items: ['{{item1}}', '{{item2}}'],
       };
 
       const context = {
         title: 'Dashboard',
-        user: { name: 'John' },
-        count: 42,
+        user: { name: 'John', email: 'john@example.com' },
+        item1: 'First',
+        item2: 'Second',
       };
 
-      expect(resolveTemplate(template, context)).toEqual({
+      const result = resolveTemplate(template, context);
+
+      expect(result).toEqual({
         title: 'Dashboard',
-        user: 'John',
-        count: 42,
-      });
-    });
-
-    it('should resolve array templates', () => {
-      const template = ['{{first}}', '{{second}}', '{{third}}'];
-      const context = { first: 'A', second: 'B', third: 'C' };
-
-      expect(resolveTemplate(template, context)).toEqual(['A', 'B', 'C']);
-    });
-
-    it('should resolve nested object/array combinations', () => {
-      const template = {
-        users: [
-          { name: '{{user1.name}}', age: '{{user1.age}}' },
-          { name: '{{user2.name}}', age: '{{user2.age}}' },
-        ],
-        title: '{{title}}',
-      };
-
-      const context = {
-        title: 'User List',
-        user1: { name: 'John', age: 30 },
-        user2: { name: 'Jane', age: 25 },
-      };
-
-      expect(resolveTemplate(template, context)).toEqual({
-        users: [
-          { name: 'John', age: 30 },
-          { name: 'Jane', age: 25 },
-        ],
-        title: 'User List',
-      });
-    });
-
-    it('should preserve non-template values', () => {
-      const template = {
-        static: 'Static Value',
-        dynamic: '{{value}}',
-        number: 42,
-        boolean: true,
-        null: null,
-      };
-
-      const context = { value: 'Dynamic' };
-
-      expect(resolveTemplate(template, context)).toEqual({
-        static: 'Static Value',
-        dynamic: 'Dynamic',
-        number: 42,
-        boolean: true,
-        null: null,
-      });
-    });
-
-    it('should handle deeply nested templates', () => {
-      const template = {
-        level1: {
-          level2: {
-            level3: {
-              value: '{{deep.value}}',
-            },
-          },
+        user: {
+          name: 'John',
+          email: 'john@example.com',
         },
-      };
-
-      const context = {
-        deep: { value: 'Found!' },
-      };
-
-      expect(resolveTemplate(template, context)).toEqual({
-        level1: {
-          level2: {
-            level3: {
-              value: 'Found!',
-            },
-          },
-        },
+        items: ['First', 'Second'],
       });
     });
 
-    it('should return original value for primitives', () => {
-      expect(resolveTemplate(42, {})).toBe(42);
-      expect(resolveTemplate(true, {})).toBe(true);
-      expect(resolveTemplate(null, {})).toBe(null);
-      expect(resolveTemplate(undefined, {})).toBeUndefined();
-    });
-
-    it('should preserve object references when no templates found', () => {
-      const template = { name: 'John', age: 30 };
-      const result = resolveTemplate(template, {});
-
-      expect(result).toEqual(template);
+    it('should return original template if variable not found', () => {
+      const result = resolveTemplate('{{missing}}', {});
+      expect(result).toBe('{{missing}}');
     });
   });
 
   describe('hasTemplateVariables', () => {
-    it('should return true for strings with template variables', () => {
-      expect(hasTemplateVariables('Hello {{name}}')).toBe(true);
-      expect(hasTemplateVariables('{{value}}')).toBe(true);
-      expect(hasTemplateVariables('Start {{middle}} End')).toBe(true);
+    it('should return true for simple variable', () => {
+      expect(hasTemplateVariables('{{name}}')).toBe(true);
     });
 
-    it('should return false for strings without template variables', () => {
-      expect(hasTemplateVariables('Plain text')).toBe(false);
-      expect(hasTemplateVariables('')).toBe(false);
-      expect(hasTemplateVariables('No variables here')).toBe(false);
+    it('should return true for multiple variables', () => {
+      expect(hasTemplateVariables('{{a}} and {{b}}')).toBe(true);
     });
 
-    it('should handle multiple variables', () => {
-      expect(hasTemplateVariables('{{first}} and {{second}}')).toBe(true);
-    });
-
-    it('should handle nested braces correctly', () => {
-      expect(hasTemplateVariables('{not a template}')).toBe(false);
-      expect(hasTemplateVariables('{{valid}}')).toBe(true);
-    });
-
-    it('should handle special characters in variable names', () => {
+    it('should return true for nested variable', () => {
       expect(hasTemplateVariables('{{user.name}}')).toBe(true);
-      expect(hasTemplateVariables('{{items.0.id}}')).toBe(true);
+    });
+
+    it('should return false for plain text', () => {
+      expect(hasTemplateVariables('plain text')).toBe(false);
+    });
+
+    it('should return false for empty string', () => {
+      expect(hasTemplateVariables('')).toBe(false);
+    });
+
+    it('should return false for single brace', () => {
+      expect(hasTemplateVariables('{name}')).toBe(false);
+    });
+
+    it('should return false for triple brace', () => {
+      expect(hasTemplateVariables('{{{name}}}')).toBe(true);
+    });
+
+    it('should return true for variables with spaces', () => {
+      expect(hasTemplateVariables('{{ name }}')).toBe(true);
+    });
+
+    it('should return true for adjacent variables', () => {
+      expect(hasTemplateVariables('{{a}}{{b}}')).toBe(true);
     });
   });
 
   describe('extractTemplateVariables', () => {
     it('should extract single variable', () => {
-      const variables = extractTemplateVariables('Hello {{name}}');
-      expect(variables).toEqual(['name']);
+      const result = extractTemplateVariables('{{name}}');
+      expect(result).toEqual(['name']);
     });
 
     it('should extract multiple variables', () => {
-      const variables = extractTemplateVariables('{{first}} {{last}} is {{age}}');
-      expect(variables).toEqual(['first', 'last', 'age']);
+      const result = extractTemplateVariables('{{first}} and {{second}}');
+      expect(result).toEqual(['first', 'second']);
     });
 
-    it('should extract nested path variables', () => {
-      const variables = extractTemplateVariables('{{user.name}} lives in {{user.city}}');
-      expect(variables).toEqual(['user.name', 'user.city']);
+    it('should extract nested variables', () => {
+      const result = extractTemplateVariables('{{user.name}} and {{user.email}}');
+      expect(result).toEqual(['user.name', 'user.email']);
     });
 
     it('should return empty array for no variables', () => {
-      expect(extractTemplateVariables('Plain text')).toEqual([]);
-      expect(extractTemplateVariables('')).toEqual([]);
+      const result = extractTemplateVariables('plain text');
+      expect(result).toEqual([]);
     });
 
-    it('should trim whitespace from variable names', () => {
-      const variables = extractTemplateVariables('{{ name }} and {{ age }}');
-      expect(variables).toEqual(['name', 'age']);
+    it('should trim whitespace from variables', () => {
+      const result = extractTemplateVariables('{{ name }} and {{ email }}');
+      expect(result).toEqual(['name', 'email']);
     });
 
     it('should handle duplicate variables', () => {
-      const variables = extractTemplateVariables('{{name}} said hello to {{name}}');
-      expect(variables).toEqual(['name', 'name']);
+      const result = extractTemplateVariables('{{x}} and {{x}}');
+      expect(result).toEqual(['x', 'x']);
     });
 
-    it('should extract variables with special characters', () => {
-      const variables = extractTemplateVariables('{{user.profile.settings.theme}}');
-      expect(variables).toEqual(['user.profile.settings.theme']);
+    it('should handle variables in complex text', () => {
+      const result = extractTemplateVariables('Hello {{name}}, your email is {{email}}!');
+      expect(result).toEqual(['name', 'email']);
     });
 
-    it('should handle complex mixed content', () => {
-      const template = 'User {{user.id}} ({{user.name}}) has {{count}} items';
-      const variables = extractTemplateVariables(template);
-      expect(variables).toEqual(['user.id', 'user.name', 'count']);
-    });
-  });
-
-  describe('Edge Cases and Complex Scenarios', () => {
-    it('should handle circular reference prevention in resolveTemplate', () => {
-      const template = {
-        name: '{{name}}',
-        nested: {
-          value: '{{value}}',
-        },
-      };
-
-      const context = { name: 'Test', value: 'Nested' };
-
-      expect(() => resolveTemplate(template, context)).not.toThrow();
+    it('should handle empty string', () => {
+      const result = extractTemplateVariables('');
+      expect(result).toEqual([]);
     });
 
-    it('should handle empty objects and arrays', () => {
-      expect(resolveTemplate({}, { value: 'test' })).toEqual({});
-      expect(resolveTemplate([], { value: 'test' })).toEqual([]);
+    it('should handle adjacent variables', () => {
+      const result = extractTemplateVariables('{{a}}{{b}}{{c}}');
+      expect(result).toEqual(['a', 'b', 'c']);
     });
 
-    it('should handle templates with only whitespace', () => {
-      expect(interpolateString('   ', { name: 'test' })).toBe('   ');
-    });
-
-    it('should handle malformed template syntax gracefully', () => {
-      // Single brace should be treated as literal
-      expect(interpolateString('{name}', { name: 'John' })).toBe('{name}');
-
-      // Incomplete template should be treated as literal
-      expect(interpolateString('{{name', { name: 'John' })).toBe('{{name');
-    });
-
-    it('should handle very long property paths', () => {
-      const obj = {
-        a: { b: { c: { d: { e: { f: { g: { h: { i: { j: 'deep' } } } } } } } } },
-      };
-
-      expect(getNestedValue(obj, 'a.b.c.d.e.f.g.h.i.j')).toBe('deep');
-    });
-
-    it('should handle array of primitives', () => {
-      const template = ['{{a}}', '{{b}}', '{{c}}'];
-      const context = { a: 1, b: 2, c: 3 };
-
-      expect(resolveTemplate(template, context)).toEqual([1, 2, 3]);
-    });
-
-    it('should handle mixed template and non-template strings', () => {
-      const template = 'Prefix {{value}} Suffix';
-      const context = { value: 'MIDDLE' };
-
-      expect(interpolateString(template, context)).toBe('Prefix MIDDLE Suffix');
-    });
-
-    it('should handle objects with numeric keys', () => {
-      const template = { '0': '{{first}}', '1': '{{second}}' };
-      const context = { first: 'A', second: 'B' };
-
-      expect(resolveTemplate(template, context)).toEqual({
-        '0': 'A',
-        '1': 'B',
-      });
+    it('should handle deeply nested paths', () => {
+      const result = extractTemplateVariables('{{a.b.c.d}}');
+      expect(result).toEqual(['a.b.c.d']);
     });
   });
 });

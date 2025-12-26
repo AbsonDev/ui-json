@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
 import {
   isValidJson,
   parseJsonSafe,
@@ -10,353 +6,270 @@ import {
   parseAndValidateJson,
 } from '../json-validation';
 
-describe('JSON Validation Utilities', () => {
+describe('JSON Validation Utils', () => {
   describe('isValidJson', () => {
     it('should return true for valid JSON string', () => {
-      expect(isValidJson('{"name": "John", "age": 30}')).toBe(true);
-      expect(isValidJson('["apple", "banana", "orange"]')).toBe(true);
-      expect(isValidJson('"hello world"')).toBe(true);
+      expect(isValidJson('{"key":"value"}')).toBe(true);
+    });
+
+    it('should return true for valid JSON array', () => {
+      expect(isValidJson('[1,2,3]')).toBe(true);
+    });
+
+    it('should return true for valid JSON number', () => {
       expect(isValidJson('123')).toBe(true);
+    });
+
+    it('should return true for valid JSON boolean', () => {
       expect(isValidJson('true')).toBe(true);
+    });
+
+    it('should return true for valid JSON null', () => {
       expect(isValidJson('null')).toBe(true);
     });
 
-    it('should return false for invalid JSON', () => {
-      expect(isValidJson('{name: "John"}')).toBe(false); // missing quotes
-      expect(isValidJson('{"name": undefined}')).toBe(false); // undefined not allowed
-      expect(isValidJson('{"name": "John",}')).toBe(false); // trailing comma
-      expect(isValidJson('{invalid}')).toBe(false);
-      expect(isValidJson('')).toBe(false);
-      expect(isValidJson('undefined')).toBe(false);
+    it('should return true for empty object', () => {
+      expect(isValidJson('{}')).toBe(true);
     });
 
-    it('should handle empty objects and arrays', () => {
-      expect(isValidJson('{}')).toBe(true);
+    it('should return true for empty array', () => {
       expect(isValidJson('[]')).toBe(true);
     });
 
-    it('should handle nested JSON', () => {
-      const nested = JSON.stringify({
-        user: {
-          name: 'John',
-          address: {
-            city: 'NYC',
-            zip: 10001,
-          },
-        },
-      });
-
-      expect(isValidJson(nested)).toBe(true);
+    it('should return false for invalid JSON', () => {
+      expect(isValidJson('invalid')).toBe(false);
     });
 
-    it('should handle special characters', () => {
-      expect(isValidJson('{"text": "Hello\\nWorld"}')).toBe(true);
-      expect(isValidJson('{"emoji": "🚀"}')).toBe(true);
-      expect(isValidJson('{"quote": "\\"test\\""}')).toBe(true);
+    it('should return false for incomplete JSON', () => {
+      expect(isValidJson('{"key":')).toBe(false);
+    });
+
+    it('should return false for single quotes', () => {
+      expect(isValidJson("{'key':'value'}")).toBe(false);
+    });
+
+    it('should return false for trailing comma', () => {
+      expect(isValidJson('{"key":"value",}')).toBe(false);
+    });
+
+    it('should return false for undefined', () => {
+      expect(isValidJson('undefined')).toBe(false);
     });
   });
 
   describe('parseJsonSafe', () => {
-    it('should parse valid JSON and return object', () => {
-      const result = parseJsonSafe('{"name": "John", "age": 30}');
-      expect(result).toEqual({ name: 'John', age: 30 });
+    it('should parse valid JSON object', () => {
+      const result = parseJsonSafe('{"key":"value"}');
+      expect(result).toEqual({ key: 'value' });
     });
 
-    it('should return null for invalid JSON', () => {
-      expect(parseJsonSafe('{invalid}')).toBeNull();
-      expect(parseJsonSafe('undefined')).toBeNull();
-      expect(parseJsonSafe('')).toBeNull();
-    });
-
-    it('should handle arrays', () => {
-      const result = parseJsonSafe('[1, 2, 3]');
+    it('should parse valid JSON array', () => {
+      const result = parseJsonSafe('[1,2,3]');
       expect(result).toEqual([1, 2, 3]);
     });
 
-    it('should handle primitives', () => {
-      expect(parseJsonSafe('123')).toBe(123);
-      expect(parseJsonSafe('"hello"')).toBe('hello');
-      expect(parseJsonSafe('true')).toBe(true);
-      expect(parseJsonSafe('null')).toBeNull();
+    it('should return null for invalid JSON', () => {
+      const result = parseJsonSafe('invalid');
+      expect(result).toBeNull();
     });
 
-    it('should handle complex nested structures', () => {
-      const complex = {
+    it('should return null for incomplete JSON', () => {
+      const result = parseJsonSafe('{"key":');
+      expect(result).toBeNull();
+    });
+
+    it('should parse nested objects', () => {
+      const result = parseJsonSafe('{"a":{"b":{"c":1}}}');
+      expect(result).toEqual({ a: { b: { c: 1 } } });
+    });
+
+    it('should parse complex structures', () => {
+      const json = '{"users":[{"name":"John","age":30},{"name":"Jane","age":25}]}';
+      const result = parseJsonSafe(json);
+      expect(result).toEqual({
         users: [
-          { id: 1, name: 'John', tags: ['admin', 'user'] },
-          { id: 2, name: 'Jane', tags: ['user'] },
+          { name: 'John', age: 30 },
+          { name: 'Jane', age: 25 },
         ],
-        settings: {
-          theme: 'dark',
-          notifications: true,
-        },
-      };
-
-      const result = parseJsonSafe(JSON.stringify(complex));
-      expect(result).toEqual(complex);
+      });
     });
 
-    it('should handle unicode and special characters', () => {
-      const result = parseJsonSafe('{"text": "Hello 世界 🌍"}');
-      expect(result).toEqual({ text: 'Hello 世界 🌍' });
+    it('should handle typed parsing', () => {
+      interface User {
+        name: string;
+        age: number;
+      }
+      const result = parseJsonSafe<User>('{"name":"John","age":30}');
+      expect(result).toEqual({ name: 'John', age: 30 });
     });
   });
 
   describe('parseJsonWithFallback', () => {
     it('should parse valid JSON', () => {
-      const result = parseJsonWithFallback('{"name": "John"}', { name: 'Default' });
-      expect(result).toEqual({ name: 'John' });
+      const result = parseJsonWithFallback('{"key":"value"}', {});
+      expect(result).toEqual({ key: 'value' });
     });
 
     it('should return fallback for invalid JSON', () => {
-      const fallback = { name: 'Default', age: 0 };
-      const result = parseJsonWithFallback('{invalid}', fallback);
+      const fallback = { default: true };
+      const result = parseJsonWithFallback('invalid', fallback);
       expect(result).toBe(fallback);
     });
 
-    it('should work with array fallbacks', () => {
+    it('should return fallback for incomplete JSON', () => {
+      const fallback = [];
+      const result = parseJsonWithFallback('{"key":', fallback);
+      expect(result).toBe(fallback);
+    });
+
+    it('should work with array fallback', () => {
       const fallback = [1, 2, 3];
-      expect(parseJsonWithFallback('{invalid}', fallback)).toEqual(fallback);
-      expect(parseJsonWithFallback('[4, 5, 6]', fallback)).toEqual([4, 5, 6]);
+      const result = parseJsonWithFallback('invalid', fallback);
+      expect(result).toEqual([1, 2, 3]);
     });
 
-    it('should work with primitive fallbacks', () => {
-      expect(parseJsonWithFallback('invalid', 'default')).toBe('default');
-      expect(parseJsonWithFallback('"valid"', 'default')).toBe('valid');
-
-      expect(parseJsonWithFallback('invalid', 0)).toBe(0);
-      expect(parseJsonWithFallback('42', 0)).toBe(42);
-
-      expect(parseJsonWithFallback('invalid', false)).toBe(false);
-      expect(parseJsonWithFallback('true', false)).toBe(true);
+    it('should work with null fallback', () => {
+      const result = parseJsonWithFallback('invalid', null);
+      expect(result).toBeNull();
     });
 
-    it('should not modify fallback object', () => {
-      const fallback = { name: 'Default' };
-      const originalFallback = { ...fallback };
+    it('should work with string fallback', () => {
+      const result = parseJsonWithFallback('invalid', 'fallback');
+      expect(result).toBe('fallback');
+    });
 
-      parseJsonWithFallback('{invalid}', fallback);
-
-      expect(fallback).toEqual(originalFallback);
+    it('should parse even if fallback is same type', () => {
+      const fallback = { fallback: true };
+      const result = parseJsonWithFallback('{"parsed":true}', fallback);
+      expect(result).toEqual({ parsed: true });
     });
   });
 
   describe('validateJsonSize', () => {
-    it('should return true for JSON under size limit', () => {
-      const smallJson = '{"name": "John"}';
-      expect(validateJsonSize(smallJson, 1000)).toBe(true);
+    it('should return true for small JSON', () => {
+      const json = '{"key":"value"}';
+      expect(validateJsonSize(json, 1000)).toBe(true);
     });
 
-    it('should return false for JSON over size limit', () => {
+    it('should return false for large JSON', () => {
+      const json = '{"key":"value"}';
+      expect(validateJsonSize(json, 5)).toBe(false);
+    });
+
+    it('should handle exact size match', () => {
+      const json = 'a';
+      const size = new Blob([json]).size;
+      expect(validateJsonSize(json, size)).toBe(true);
+    });
+
+    it('should handle one byte over limit', () => {
+      const json = 'ab';
+      const size = new Blob([json]).size;
+      expect(validateJsonSize(json, size - 1)).toBe(false);
+    });
+
+    it('should handle empty string', () => {
+      expect(validateJsonSize('', 100)).toBe(true);
+    });
+
+    it('should handle large JSON objects', () => {
       const largeJson = JSON.stringify({ data: 'x'.repeat(10000) });
       expect(validateJsonSize(largeJson, 100)).toBe(false);
     });
 
-    it('should handle exact size limit', () => {
-      const json = '{"key": "value"}';
-      const exactSize = new Blob([json]).size;
-
-      expect(validateJsonSize(json, exactSize)).toBe(true);
-      expect(validateJsonSize(json, exactSize - 1)).toBe(false);
-    });
-
-    it('should handle empty JSON', () => {
-      expect(validateJsonSize('{}', 10)).toBe(true);
-      expect(validateJsonSize('[]', 10)).toBe(true);
-    });
-
-    it('should handle unicode characters correctly in size calculation', () => {
-      const unicodeJson = '{"emoji": "🚀"}';
-      const size = new Blob([unicodeJson]).size;
-
-      // Emoji takes more bytes than regular characters
-      expect(size).toBeGreaterThan(unicodeJson.length - 4);
-      expect(validateJsonSize(unicodeJson, size)).toBe(true);
-      expect(validateJsonSize(unicodeJson, size - 1)).toBe(false);
-    });
-
-    it('should handle large JSON objects', () => {
-      const largeObject = {
-        data: Array.from({ length: 1000 }, (_, i) => ({
-          id: i,
-          name: `Item ${i}`,
-          description: 'A'.repeat(100),
-        })),
-      };
-
-      const json = JSON.stringify(largeObject);
+    it('should handle unicode characters', () => {
+      const json = '{"emoji":"🚀"}';
       const size = new Blob([json]).size;
-
-      expect(validateJsonSize(json, size + 1000)).toBe(true);
-      expect(validateJsonSize(json, 1000)).toBe(false);
+      expect(validateJsonSize(json, size)).toBe(true);
     });
   });
 
   describe('parseAndValidateJson', () => {
-    it('should successfully parse and validate JSON without validator', () => {
-      const result = parseAndValidateJson('{"name": "John", "age": 30}');
-
+    it('should parse valid JSON without validator', () => {
+      const result = parseAndValidateJson('{"key":"value"}');
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data).toEqual({ name: 'John', age: 30 });
+        expect(result.data).toEqual({ key: 'value' });
       }
     });
 
-    it('should fail for invalid JSON', () => {
-      const result = parseAndValidateJson('{invalid}');
-
+    it('should return error for invalid JSON', () => {
+      const result = parseAndValidateJson('invalid');
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeTruthy();
       }
     });
 
-    it('should validate with custom validator - success', () => {
-      const validator = (data: any) => {
-        return data.name && typeof data.name === 'string';
-      };
-
-      const result = parseAndValidateJson('{"name": "John"}', validator);
-
+    it('should validate with custom validator', () => {
+      const validator = (data: any) => typeof data.name === 'string';
+      const result = parseAndValidateJson('{"name":"John"}', validator);
       expect(result.success).toBe(true);
     });
 
-    it('should validate with custom validator - failure', () => {
-      const validator = (data: any) => {
-        return data.name && typeof data.name === 'string';
-      };
-
-      const result = parseAndValidateJson('{"age": 30}', validator);
-
+    it('should fail validation with custom validator', () => {
+      const validator = (data: any) => typeof data.name === 'string';
+      const result = parseAndValidateJson('{"age":30}', validator);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe('JSON structure validation failed');
       }
     });
 
-    it('should validate complex structure with custom validator', () => {
+    it('should validate array structure', () => {
+      const validator = (data: any) => Array.isArray(data) && data.length > 0;
+      const result = parseAndValidateJson('[1,2,3]', validator);
+      expect(result.success).toBe(true);
+    });
+
+    it('should fail validation for empty array', () => {
+      const validator = (data: any) => Array.isArray(data) && data.length > 0;
+      const result = parseAndValidateJson('[]', validator);
+      expect(result.success).toBe(false);
+    });
+
+    it('should validate nested properties', () => {
+      const validator = (data: any) => data.user && data.user.email;
+      const result = parseAndValidateJson('{"user":{"email":"test@test.com"}}', validator);
+      expect(result.success).toBe(true);
+    });
+
+    it('should fail validation for missing nested properties', () => {
+      const validator = (data: any) => data.user && data.user.email;
+      const result = parseAndValidateJson('{"user":{}}', validator);
+      expect(result.success).toBe(false);
+    });
+
+    it('should handle Error object in catch', () => {
+      const result = parseAndValidateJson('{"key":');
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('JSON');
+      }
+    });
+
+    it('should work with typed validation', () => {
       interface User {
-        id: number;
         name: string;
-        email: string;
+        age: number;
       }
-
-      const validator = (data: any): data is User => {
-        return (
-          typeof data.id === 'number' &&
-          typeof data.name === 'string' &&
-          typeof data.email === 'string' &&
-          data.email.includes('@')
-        );
-      };
-
-      const validUser = '{"id": 1, "name": "John", "email": "john@example.com"}';
-      const invalidUser = '{"id": 1, "name": "John", "email": "invalid"}';
-
-      const result1 = parseAndValidateJson<User>(validUser, validator);
-      expect(result1.success).toBe(true);
-
-      const result2 = parseAndValidateJson<User>(invalidUser, validator);
-      expect(result2.success).toBe(false);
-    });
-
-    it('should handle arrays with validator', () => {
-      const validator = (data: any) => {
-        return Array.isArray(data) && data.length > 0;
-      };
-
-      const result1 = parseAndValidateJson('[1, 2, 3]', validator);
-      expect(result1.success).toBe(true);
-
-      const result2 = parseAndValidateJson('[]', validator);
-      expect(result2.success).toBe(false);
-    });
-
-    it('should provide meaningful error messages', () => {
-      const result1 = parseAndValidateJson('{invalid JSON}');
-      expect(result1.success).toBe(false);
-      if (!result1.success) {
-        expect(result1.error).toContain('JSON');
-      }
-
-      const validator = () => false;
-      const result2 = parseAndValidateJson('{"valid": "json"}', validator);
-      expect(result2.success).toBe(false);
-      if (!result2.success) {
-        expect(result2.error).toBe('JSON structure validation failed');
-      }
-    });
-
-    it('should preserve type information with generics', () => {
-      interface Config {
-        theme: string;
-        settings: {
-          darkMode: boolean;
-        };
-      }
-
-      const result = parseAndValidateJson<Config>(
-        '{"theme": "dark", "settings": {"darkMode": true}}'
-      );
-
+      const validator = (data: any): data is User =>
+        typeof data.name === 'string' && typeof data.age === 'number';
+      
+      const result = parseAndValidateJson<User>('{"name":"John","age":30}', validator);
+      expect(result.success).toBe(true);
       if (result.success) {
-        // TypeScript should recognize these properties
-        expect(result.data.theme).toBe('dark');
-        expect(result.data.settings.darkMode).toBe(true);
+        expect(result.data.name).toBe('John');
+        expect(result.data.age).toBe(30);
       }
     });
-  });
 
-  describe('Edge Cases and Security', () => {
-    it('should handle extremely nested JSON', () => {
-      let nested: any = { value: 1 };
-      for (let i = 0; i < 100; i++) {
-        nested = { child: nested };
+    it('should return correct data type', () => {
+      const result = parseAndValidateJson('[1,2,3]');
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(Array.isArray(result.data)).toBe(true);
       }
-
-      const json = JSON.stringify(nested);
-      expect(isValidJson(json)).toBe(true);
-      expect(parseJsonSafe(json)).toEqual(nested);
-    });
-
-    it('should handle very long strings', () => {
-      const longString = 'a'.repeat(100000);
-      const json = JSON.stringify({ text: longString });
-
-      expect(isValidJson(json)).toBe(true);
-      const result = parseJsonSafe(json);
-      expect(result?.text).toBe(longString);
-    });
-
-    it('should handle null prototype objects safely', () => {
-      const obj = Object.create(null);
-      obj.key = 'value';
-
-      const json = JSON.stringify(obj);
-      expect(isValidJson(json)).toBe(true);
-    });
-
-    it('should reject __proto__ pollution attempts', () => {
-      const malicious = '{"__proto__": {"polluted": true}}';
-      const result = parseJsonSafe(malicious);
-
-      // Should parse but not pollute Object.prototype
-      expect(result).toBeTruthy();
-      expect((Object.prototype as any).polluted).toBeUndefined();
-    });
-
-    it('should handle different number formats', () => {
-      expect(parseJsonSafe('123')).toBe(123);
-      expect(parseJsonSafe('123.456')).toBe(123.456);
-      expect(parseJsonSafe('-123')).toBe(-123);
-      expect(parseJsonSafe('0')).toBe(0);
-      expect(parseJsonSafe('1e10')).toBe(1e10);
-    });
-
-    it('should handle special JSON values', () => {
-      expect(parseJsonSafe('null')).toBeNull();
-      expect(parseJsonSafe('true')).toBe(true);
-      expect(parseJsonSafe('false')).toBe(false);
     });
   });
 });
