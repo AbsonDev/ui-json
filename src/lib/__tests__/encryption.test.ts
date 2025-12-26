@@ -1,4 +1,4 @@
-import { encrypt, decrypt, maskPassword } from '../encryption'
+import { encrypt, decrypt, maskPassword, testEncryption } from '../encryption'
 
 describe('Encryption Utils', () => {
   describe('encrypt', () => {
@@ -146,7 +146,8 @@ describe('Encryption Utils', () => {
     })
 
     it('should mask long passwords correctly', () => {
-      expect(maskPassword('verylongpassword123')).toBe('ve•••••••••••••23')
+      // 'verylongpassword123' = 19 chars, so middle = max(4, 19-4) = 15
+      expect(maskPassword('verylongpassword123')).toBe('ve•••••••••••••••23')
     })
 
     it('should handle exactly 5 characters', () => {
@@ -225,5 +226,25 @@ describe('Encryption Utils', () => {
       expect(decrypted).toBe(xss)
       expect(encrypted).not.toContain('<script>')
     })
+  })
+
+  describe('testEncryption', () => {
+    it('should return true when encryption works correctly', () => {
+      const result = testEncryption();
+
+      expect(result).toBe(true);
+    });
+
+    it('should validate that encrypt/decrypt are working', () => {
+      // testEncryption internally tests the round-trip
+      expect(testEncryption()).toBe(true);
+
+      // Verify we can still use encrypt/decrypt normally
+      const testData = 'test-password-123';
+      const encrypted = encrypt(testData);
+      const decrypted = decrypt(encrypted);
+
+      expect(decrypted).toBe(testData);
+    });
   })
 })
