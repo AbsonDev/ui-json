@@ -41,23 +41,61 @@ export function handleSubmit(
     if (action.onSuccess) {
       handleAction(action.onSuccess);
     }
-  } else {
-    // Mock API call
+  } else if (action.target === 'api' && action.endpoint) {
+    // Real API call
     const body: Record<string, any> = {};
-    action.fields && Object.values(action.fields).forEach(fieldId => {
-      body[fieldId] = formState[fieldId];
-    });
 
-    console.log('Submitting to:', action.endpoint, 'with data:', body);
+    // Map form fields to request body
+    if (action.fields) {
+      Object.entries(action.fields).forEach(([key, fieldId]) => {
+        body[key] = formState[fieldId];
+      });
+    }
 
-    setTimeout(() => {
-      const success = Math.random() > 0.2; // 80% success rate
+    const method = action.method || 'POST';
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(action.headers || {}),
+    };
 
-      if (success && action.onSuccess) {
-        handleAction(action.onSuccess);
-      } else if (!success && action.onError) {
-        handleAction(action.onError);
-      }
-    }, 1000);
+    // Make the actual HTTP request
+    fetch(action.endpoint, {
+      method,
+      headers,
+      body: method !== 'GET' ? JSON.stringify(body) : undefined,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('API Success:', data);
+
+        // Clear form fields on success
+        if (action.fields) {
+          const newFormState = { ...formState };
+          Object.values(action.fields).forEach((fieldId) => {
+            newFormState[fieldId] = '';
+          });
+          setFormState(newFormState);
+        }
+
+        // Execute success action
+        if (action.onSuccess) {
+          handleAction(action.onSuccess);
+        }
+      })
+      .catch((error) => {
+        console.error('API Error:', error);
+
+        // Execute error action
+        if (action.onError) {
+          handleAction(action.onError);
+        }
+      });
+  } else {
+    console.warn('Invalid submit action configuration', action);
   }
 }

@@ -2,19 +2,19 @@ import { handleSubmit } from '../submit-handler';
 import { ActionContext } from '../../action-context';
 import { UIAction } from '../../../../types';
 
-// Mock timers for API submission tests
-jest.useFakeTimers();
+// Mock fetch globally
+global.fetch = jest.fn();
 
 describe('Submit Handler', () => {
   beforeEach(() => {
-    jest.clearAllTimers();
+    jest.clearAllMocks();
     jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(Math, 'random').mockReturnValue(0.5); // Default to success
+    jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
-    jest.clearAllTimers();
   });
 
   describe('Database Submission', () => {
@@ -244,56 +244,24 @@ describe('Submit Handler', () => {
   });
 
   describe('API Submission', () => {
-    it('should log API submission data', () => {
-      const consoleSpy = jest.spyOn(console, 'log');
+    it('should make POST request to external API', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, id: 123 }),
+      });
 
-      const mockContext: ActionContext = {
-        setCurrentScreenId: jest.fn(),
-        uiApp: null,
-        formState: {
-          username: 'testuser',
-          email: 'test@example.com',
-        },
-        setFormState: jest.fn(),
-        currentDbData: {},
-        setCurrentDbData: jest.fn(),
-        databaseData: null,
-        handleAction: jest.fn(),
-      };
-
-      const action: Extract<UIAction, { type: 'submit' }> = {
-        type: 'submit',
-        endpoint: '/api/users',
-        fields: {
-          username: 'username',
-          email: 'email',
-        },
-      };
-
-      handleSubmit(action, mockContext);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Submitting to:',
-        '/api/users',
-        'with data:',
-        {
-          username: 'testuser',
-          email: 'test@example.com',
-        }
-      );
-    });
-
-    it('should call onSuccess after successful API submission', () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.5); // Success (> 0.2)
+      const mockSetFormState = jest.fn();
       const mockHandleAction = jest.fn();
 
       const mockContext: ActionContext = {
         setCurrentScreenId: jest.fn(),
         uiApp: null,
         formState: {
-          data: 'test',
+          username: 'testuser',
+          email: 'test@example.com',
         },
-        setFormState: jest.fn(),
+        setFormState: mockSetFormState,
         currentDbData: {},
         setCurrentDbData: jest.fn(),
         databaseData: null,
@@ -302,17 +270,36 @@ describe('Submit Handler', () => {
 
       const action: Extract<UIAction, { type: 'submit' }> = {
         type: 'submit',
-        endpoint: '/api/test',
+        target: 'api',
+        endpoint: 'https://api.example.com/users',
+        method: 'POST',
         fields: {
-          data: 'data',
+          username: 'username',
+          email: 'email',
         },
         onSuccess: { type: 'navigate', target: 'success' },
       };
 
       handleSubmit(action, mockContext);
 
-      // Fast-forward timer
-      jest.advanceTimersByTime(1000);
+      // Wait for promises
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: 'testuser',
+          email: 'test@example.com',
+        }),
+      });
+
+      expect(mockSetFormState).toHaveBeenCalledWith({
+        username: '',
+        email: '',
+      });
 
       expect(mockHandleAction).toHaveBeenCalledWith({
         type: 'navigate',
@@ -320,139 +307,12 @@ describe('Submit Handler', () => {
       });
     });
 
-    it('should call onError after failed API submission', () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.1); // Failure (<= 0.2)
-      const mockHandleAction = jest.fn();
-
-      const mockContext: ActionContext = {
-        setCurrentScreenId: jest.fn(),
-        uiApp: null,
-        formState: {
-          data: 'test',
-        },
-        setFormState: jest.fn(),
-        currentDbData: {},
-        setCurrentDbData: jest.fn(),
-        databaseData: null,
-        handleAction: mockHandleAction,
-      };
-
-      const action: Extract<UIAction, { type: 'submit' }> = {
-        type: 'submit',
-        endpoint: '/api/test',
-        fields: {
-          data: 'data',
-        },
-        onError: { type: 'popup', title: 'Error', message: 'Submission failed' },
-      };
-
-      handleSubmit(action, mockContext);
-
-      // Fast-forward timer
-      jest.advanceTimersByTime(1000);
-
-      expect(mockHandleAction).toHaveBeenCalledWith({
-        type: 'popup',
-        title: 'Error',
-        message: 'Submission failed',
+    it('should make GET request without body', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [] }),
       });
-    });
-
-    it('should not call any action if success but onSuccess not provided', () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.5);
-      const mockHandleAction = jest.fn();
-
-      const mockContext: ActionContext = {
-        setCurrentScreenId: jest.fn(),
-        uiApp: null,
-        formState: {
-          data: 'test',
-        },
-        setFormState: jest.fn(),
-        currentDbData: {},
-        setCurrentDbData: jest.fn(),
-        databaseData: null,
-        handleAction: mockHandleAction,
-      };
-
-      const action: Extract<UIAction, { type: 'submit' }> = {
-        type: 'submit',
-        endpoint: '/api/test',
-        fields: {
-          data: 'data',
-        },
-      };
-
-      handleSubmit(action, mockContext);
-      jest.advanceTimersByTime(1000);
-
-      expect(mockHandleAction).not.toHaveBeenCalled();
-    });
-
-    it('should not call any action if failure but onError not provided', () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.1);
-      const mockHandleAction = jest.fn();
-
-      const mockContext: ActionContext = {
-        setCurrentScreenId: jest.fn(),
-        uiApp: null,
-        formState: {
-          data: 'test',
-        },
-        setFormState: jest.fn(),
-        currentDbData: {},
-        setCurrentDbData: jest.fn(),
-        databaseData: null,
-        handleAction: mockHandleAction,
-      };
-
-      const action: Extract<UIAction, { type: 'submit' }> = {
-        type: 'submit',
-        endpoint: '/api/test',
-        fields: {
-          data: 'data',
-        },
-      };
-
-      handleSubmit(action, mockContext);
-      jest.advanceTimersByTime(1000);
-
-      expect(mockHandleAction).not.toHaveBeenCalled();
-    });
-
-    it('should handle API submission without fields', () => {
-      const consoleSpy = jest.spyOn(console, 'log');
-
-      const mockContext: ActionContext = {
-        setCurrentScreenId: jest.fn(),
-        uiApp: null,
-        formState: {
-          data: 'test',
-        },
-        setFormState: jest.fn(),
-        currentDbData: {},
-        setCurrentDbData: jest.fn(),
-        databaseData: null,
-        handleAction: jest.fn(),
-      };
-
-      const action: Extract<UIAction, { type: 'submit' }> = {
-        type: 'submit',
-        endpoint: '/api/test',
-      };
-
-      handleSubmit(action, mockContext);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Submitting to:',
-        '/api/test',
-        'with data:',
-        {}
-      );
-    });
-
-    it('should handle empty formState', () => {
-      const consoleSpy = jest.spyOn(console, 'log');
 
       const mockContext: ActionContext = {
         setCurrentScreenId: jest.fn(),
@@ -467,23 +327,303 @@ describe('Submit Handler', () => {
 
       const action: Extract<UIAction, { type: 'submit' }> = {
         type: 'submit',
-        endpoint: '/api/test',
+        target: 'api',
+        endpoint: 'https://api.example.com/data',
+        method: 'GET',
+      };
+
+      handleSubmit(action, mockContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/data', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: undefined,
+      });
+    });
+
+    it('should include custom headers', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const mockContext: ActionContext = {
+        setCurrentScreenId: jest.fn(),
+        uiApp: null,
+        formState: {
+          token: 'abc123',
+        },
+        setFormState: jest.fn(),
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        databaseData: null,
+        handleAction: jest.fn(),
+      };
+
+      const action: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/protected',
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer token123',
+          'X-Custom-Header': 'custom-value',
+        },
         fields: {
-          field1: 'field1',
-          field2: 'field2',
+          data: 'token',
         },
       };
 
       handleSubmit(action, mockContext);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Submitting to:',
-        '/api/test',
-        'with data:',
-        {
-          field1: undefined,
-          field2: undefined,
-        }
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/protected', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer token123',
+          'X-Custom-Header': 'custom-value',
+        },
+        body: JSON.stringify({
+          data: 'abc123',
+        }),
+      });
+    });
+
+    it('should handle API errors and call onError', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+      const mockHandleAction = jest.fn();
+
+      const mockContext: ActionContext = {
+        setCurrentScreenId: jest.fn(),
+        uiApp: null,
+        formState: {
+          email: 'invalid-email',
+        },
+        setFormState: jest.fn(),
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        databaseData: null,
+        handleAction: mockHandleAction,
+      };
+
+      const action: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/users',
+        fields: {
+          email: 'email',
+        },
+        onError: { type: 'popup', message: 'Erro ao enviar' },
+      };
+
+      handleSubmit(action, mockContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockHandleAction).toHaveBeenCalledWith({
+        type: 'popup',
+        message: 'Erro ao enviar',
+      });
+    });
+
+    it('should handle network errors', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const mockHandleAction = jest.fn();
+      const consoleErrorSpy = jest.spyOn(console, 'error');
+
+      const mockContext: ActionContext = {
+        setCurrentScreenId: jest.fn(),
+        uiApp: null,
+        formState: {
+          data: 'test',
+        },
+        setFormState: jest.fn(),
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        databaseData: null,
+        handleAction: mockHandleAction,
+      };
+
+      const action: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/test',
+        fields: {
+          data: 'data',
+        },
+        onError: { type: 'popup', message: 'Erro de rede' },
+      };
+
+      handleSubmit(action, mockContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'API Error:',
+        expect.any(Error)
+      );
+
+      expect(mockHandleAction).toHaveBeenCalledWith({
+        type: 'popup',
+        message: 'Erro de rede',
+      });
+    });
+
+    it('should use POST as default method', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const mockContext: ActionContext = {
+        setCurrentScreenId: jest.fn(),
+        uiApp: null,
+        formState: {
+          data: 'test',
+        },
+        setFormState: jest.fn(),
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        databaseData: null,
+        handleAction: jest.fn(),
+      };
+
+      const action: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/test',
+        fields: {
+          data: 'data',
+        },
+      };
+
+      handleSubmit(action, mockContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/test',
+        expect.objectContaining({
+          method: 'POST',
+        })
+      );
+    });
+
+    it('should not call onSuccess if not provided', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const mockHandleAction = jest.fn();
+
+      const mockContext: ActionContext = {
+        setCurrentScreenId: jest.fn(),
+        uiApp: null,
+        formState: {
+          data: 'test',
+        },
+        setFormState: jest.fn(),
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        databaseData: null,
+        handleAction: mockHandleAction,
+      };
+
+      const action: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/test',
+        fields: {
+          data: 'data',
+        },
+      };
+
+      handleSubmit(action, mockContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockHandleAction).not.toHaveBeenCalled();
+    });
+
+    it('should support PUT and DELETE methods', async () => {
+      const mockFetch = global.fetch as jest.Mock;
+
+      // Test PUT
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ updated: true }),
+      });
+
+      const putContext: ActionContext = {
+        setCurrentScreenId: jest.fn(),
+        uiApp: null,
+        formState: { id: '123', name: 'Updated' },
+        setFormState: jest.fn(),
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        databaseData: null,
+        handleAction: jest.fn(),
+      };
+
+      const putAction: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/items/123',
+        method: 'PUT',
+        fields: { name: 'name' },
+      };
+
+      handleSubmit(putAction, putContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/items/123',
+        expect.objectContaining({
+          method: 'PUT',
+        })
+      );
+
+      // Test DELETE
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ deleted: true }),
+      });
+
+      const deleteAction: Extract<UIAction, { type: 'submit' }> = {
+        type: 'submit',
+        target: 'api',
+        endpoint: 'https://api.example.com/items/123',
+        method: 'DELETE',
+      };
+
+      handleSubmit(deleteAction, putContext);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/items/123',
+        expect.objectContaining({
+          method: 'DELETE',
+        })
       );
     });
   });

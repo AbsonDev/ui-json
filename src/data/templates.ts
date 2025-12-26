@@ -552,6 +552,367 @@ export const templates: Template[] = [
   },
   "initialScreen": "dashboard"
 }`
+  },
+
+  // API INTEGRATION
+  {
+    id: 'weather-app',
+    name: 'App de Clima',
+    description: 'Integração com API externa para consultar clima de qualquer cidade',
+    category: 'productivity',
+    difficulty: 'advanced',
+    features: ['Integração com API', 'Consulta de clima', 'Headers customizados', 'Tratamento de erros'],
+    preview: 'https://images.unsplash.com/photo-1592210454359-9043f067919b?w=400',
+    author: 'UI-JSON Team',
+    rating: 4.9,
+    downloads: 850,
+    json: `{
+  "version": "1.0",
+  "app": {
+    "name": "Consulta Clima",
+    "theme": {
+      "primaryColor": "#3B82F6",
+      "backgroundColor": "#EFF6FF",
+      "textColor": "#1E3A8A"
+    }
+  },
+  "screens": {
+    "search": {
+      "id": "search",
+      "title": "Consultar Clima",
+      "padding": 20,
+      "components": [
+        {
+          "type": "text",
+          "id": "title",
+          "content": "☀️ Previsão do Tempo",
+          "fontSize": 28,
+          "fontWeight": "bold",
+          "textAlign": "center",
+          "marginBottom": 32
+        },
+        {
+          "type": "card",
+          "id": "search_card",
+          "padding": 20,
+          "elevation": 2,
+          "components": [
+            {
+              "type": "input",
+              "id": "city",
+              "label": "Digite o nome da cidade",
+              "placeholder": "Ex: São Paulo",
+              "inputType": "text",
+              "required": true,
+              "marginBottom": 16
+            },
+            {
+              "type": "button",
+              "id": "search_button",
+              "text": "Consultar Clima",
+              "variant": "primary",
+              "fullWidth": true,
+              "icon": "search",
+              "action": {
+                "type": "submit",
+                "target": "api",
+                "endpoint": "https://api.openweathermap.org/data/2.5/weather",
+                "method": "GET",
+                "headers": {
+                  "Accept": "application/json"
+                },
+                "fields": {
+                  "q": "city",
+                  "appid": "YOUR_API_KEY",
+                  "units": "metric",
+                  "lang": "pt_br"
+                },
+                "onSuccess": {
+                  "type": "navigate",
+                  "target": "result"
+                },
+                "onError": {
+                  "type": "popup",
+                  "variant": "alert",
+                  "title": "Erro",
+                  "message": "Não foi possível consultar o clima. Verifique o nome da cidade."
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "info",
+          "content": "💡 Exemplo de integração com API externa usando OpenWeather",
+          "fontSize": 12,
+          "color": "#6B7280",
+          "textAlign": "center",
+          "marginTop": 24
+        }
+      ]
+    },
+    "result": {
+      "id": "result",
+      "title": "Resultado",
+      "padding": 20,
+      "components": [
+        {
+          "type": "text",
+          "id": "city_name",
+          "content": "Clima de {{city}}",
+          "fontSize": 24,
+          "fontWeight": "bold",
+          "textAlign": "center",
+          "marginBottom": 16
+        },
+        {
+          "type": "card",
+          "id": "weather_card",
+          "padding": 24,
+          "elevation": 2,
+          "backgroundColor": "#FFFFFF",
+          "components": [
+            {
+              "type": "text",
+              "id": "temperature",
+              "content": "🌡️ Temperatura: {{temp}}°C",
+              "fontSize": 20,
+              "marginBottom": 12
+            },
+            {
+              "type": "text",
+              "id": "feels_like",
+              "content": "Sensação: {{feels_like}}°C",
+              "fontSize": 16,
+              "color": "#6B7280",
+              "marginBottom": 12
+            },
+            {
+              "type": "text",
+              "id": "description",
+              "content": "{{description}}",
+              "fontSize": 18,
+              "marginBottom": 12
+            },
+            {
+              "type": "divider",
+              "id": "div1",
+              "marginTop": 16,
+              "marginBottom": 16
+            },
+            {
+              "type": "text",
+              "id": "humidity",
+              "content": "💧 Umidade: {{humidity}}%",
+              "fontSize": 16,
+              "marginBottom": 8
+            },
+            {
+              "type": "text",
+              "id": "pressure",
+              "content": "🌪️ Pressão: {{pressure}} hPa",
+              "fontSize": 16,
+              "marginBottom": 8
+            },
+            {
+              "type": "text",
+              "id": "wind",
+              "content": "💨 Vento: {{wind_speed}} m/s",
+              "fontSize": 16
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "back_button",
+          "text": "Nova Consulta",
+          "variant": "outline",
+          "fullWidth": true,
+          "marginTop": 24,
+          "action": {
+            "type": "goBack"
+          }
+        }
+      ]
+    },
+    "api-demo": {
+      "id": "api-demo",
+      "title": "Demo API",
+      "padding": 20,
+      "components": [
+        {
+          "type": "text",
+          "id": "demo_title",
+          "content": "🌐 Exemplos de Integração com API",
+          "fontSize": 24,
+          "fontWeight": "bold",
+          "marginBottom": 24
+        },
+        {
+          "type": "card",
+          "id": "post_example",
+          "padding": 20,
+          "marginBottom": 16,
+          "components": [
+            {
+              "type": "text",
+              "id": "post_title",
+              "content": "POST - Criar usuário",
+              "fontSize": 18,
+              "fontWeight": "bold",
+              "marginBottom": 12
+            },
+            {
+              "type": "input",
+              "id": "user_name",
+              "label": "Nome",
+              "placeholder": "Digite seu nome",
+              "marginBottom": 12
+            },
+            {
+              "type": "input",
+              "id": "user_email",
+              "label": "Email",
+              "inputType": "email",
+              "placeholder": "seu@email.com",
+              "marginBottom": 16
+            },
+            {
+              "type": "button",
+              "id": "create_user",
+              "text": "Criar Usuário",
+              "variant": "primary",
+              "fullWidth": true,
+              "action": {
+                "type": "submit",
+                "target": "api",
+                "endpoint": "https://jsonplaceholder.typicode.com/users",
+                "method": "POST",
+                "fields": {
+                  "name": "user_name",
+                  "email": "user_email"
+                },
+                "onSuccess": {
+                  "type": "popup",
+                  "variant": "info",
+                  "title": "Sucesso!",
+                  "message": "Usuário criado com sucesso!"
+                },
+                "onError": {
+                  "type": "popup",
+                  "variant": "alert",
+                  "title": "Erro",
+                  "message": "Falha ao criar usuário"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "id": "auth_example",
+          "padding": 20,
+          "marginBottom": 16,
+          "components": [
+            {
+              "type": "text",
+              "id": "auth_title",
+              "content": "POST - Com autenticação",
+              "fontSize": 18,
+              "fontWeight": "bold",
+              "marginBottom": 12
+            },
+            {
+              "type": "input",
+              "id": "api_token",
+              "label": "Token de API",
+              "placeholder": "Cole seu token aqui",
+              "marginBottom": 16
+            },
+            {
+              "type": "button",
+              "id": "auth_request",
+              "text": "Fazer Requisição Autenticada",
+              "variant": "secondary",
+              "fullWidth": true,
+              "action": {
+                "type": "submit",
+                "target": "api",
+                "endpoint": "https://api.exemplo.com/protected",
+                "method": "POST",
+                "headers": {
+                  "Authorization": "Bearer {{api_token}}",
+                  "X-Custom-Header": "ui-json-app"
+                },
+                "onSuccess": {
+                  "type": "popup",
+                  "title": "Autenticado!",
+                  "message": "Requisição autenticada com sucesso"
+                },
+                "onError": {
+                  "type": "popup",
+                  "variant": "alert",
+                  "title": "Não autorizado",
+                  "message": "Token inválido ou expirado"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "id": "delete_example",
+          "padding": 20,
+          "components": [
+            {
+              "type": "text",
+              "id": "delete_title",
+              "content": "DELETE - Remover item",
+              "fontSize": 18,
+              "fontWeight": "bold",
+              "marginBottom": 12
+            },
+            {
+              "type": "input",
+              "id": "item_id",
+              "label": "ID do item",
+              "inputType": "number",
+              "placeholder": "1",
+              "marginBottom": 16
+            },
+            {
+              "type": "button",
+              "id": "delete_item",
+              "text": "Deletar Item",
+              "variant": "outline",
+              "fullWidth": true,
+              "action": {
+                "type": "submit",
+                "target": "api",
+                "endpoint": "https://jsonplaceholder.typicode.com/posts/{{item_id}}",
+                "method": "DELETE",
+                "onSuccess": {
+                  "type": "popup",
+                  "variant": "info",
+                  "title": "Deletado",
+                  "message": "Item removido com sucesso"
+                },
+                "onError": {
+                  "type": "popup",
+                  "variant": "alert",
+                  "title": "Erro",
+                  "message": "Falha ao deletar item"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "initialScreen": "search"
+}`
   }
 ];
 
