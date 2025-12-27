@@ -12,7 +12,7 @@ export function useDatabaseState() {
       try {
         return JSON.parse(savedData);
       } catch (e) {
-        console.error('Failed to parse saved database data from localStorage', e);
+        // Failed to parse saved database data from localStorage
         return {};
       }
     }

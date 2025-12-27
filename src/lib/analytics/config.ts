@@ -6,6 +6,7 @@
  */
 
 import mixpanel from 'mixpanel-browser';
+import logger from '../logger';
 
 const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || '';
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -13,7 +14,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 // Initialize Mixpanel
 export const initAnalytics = () => {
   if (!MIXPANEL_TOKEN) {
-    console.warn('⚠️ Mixpanel token not found. Analytics disabled.');
+    logger.warn('⚠️ Mixpanel token not found. Analytics disabled.');
     return;
   }
 
@@ -25,7 +26,7 @@ export const initAnalytics = () => {
   });
 
   if (isDevelopment) {
-    console.log('🔍 Mixpanel initialized in development mode');
+    logger.info('🔍 Mixpanel initialized in development mode');
   }
 };
 

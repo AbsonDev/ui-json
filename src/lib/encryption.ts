@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import logger, { logError } from './logger'
 
 const ALGORITHM = 'aes-256-cbc'
 
@@ -40,7 +41,7 @@ export function encrypt(text: string): string {
     // Return IV + encrypted data (we need IV for decryption)
     return `${iv.toString('hex')}:${encrypted}`
   } catch (error) {
-    console.error('Encryption error:', error)
+    logError(error instanceof Error ? error : new Error('Encryption error'))
     throw new Error('Failed to encrypt data')
   }
 }
@@ -66,7 +67,7 @@ export function decrypt(encryptedText: string): string {
 
     return decrypted
   } catch (error) {
-    console.error('Decryption error:', error)
+    logError(error instanceof Error ? error : new Error('Decryption error'))
     throw new Error('Failed to decrypt data')
   }
 }

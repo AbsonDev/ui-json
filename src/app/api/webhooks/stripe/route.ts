@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
-import { logError } from '@/lib/logger'
+import logger, { logError } from '@/lib/logger'
 import { PlanTier } from '@prisma/client'
 import {
   identifyUser,
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         break
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        logger.info(`Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
@@ -85,7 +85,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     throw new Error('No userId in checkout session metadata')
   }
 
-  console.log(`Checkout completed for user ${userId}`)
+  logger.info(`Checkout completed for user ${userId}`)
 
   // Track checkout completion
   if (planTier && session.amount_total) {
@@ -256,7 +256,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         )
       })
 
-      console.log(`✉️ Subscription canceled email sent to ${user.email}`)
+      logger.info(`✉️ Subscription canceled email sent to ${user.email}`)
     }
   }
 }
@@ -323,7 +323,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
       )
     })
 
-    console.log(`✉️ Payment success email sent to ${user.email}`)
+    logger.info(`✉️ Payment success email sent to ${user.email}`)
   }
 }
 
@@ -371,7 +371,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       )
     })
 
-    console.log(`✉️ Payment failed email sent to ${user.email}`)
+    logger.info(`✉️ Payment failed email sent to ${user.email}`)
   }
 }
 

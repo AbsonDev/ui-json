@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: portalSession.url })
 
   } catch (error) {
-    console.error('Billing portal error:', error)
     logError(error instanceof Error ? error : new Error('Billing portal failed'))
 
     return NextResponse.json(

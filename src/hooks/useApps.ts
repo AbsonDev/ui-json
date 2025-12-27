@@ -40,7 +40,7 @@ export function useApps(): UseAppsReturn {
 
       // If user has no apps, create sample apps
       if (userApps.length === 0) {
-        console.log('No apps found, creating sample apps...')
+        // No apps found, creating sample apps
         const createdApps: App[] = []
 
         for (const sampleApp of sampleApps) {
@@ -53,7 +53,7 @@ export function useApps(): UseAppsReturn {
             })
             createdApps.push(newApp as App)
           } catch (err) {
-            console.error('Error creating sample app:', err)
+            // Error creating sample app - skip
           }
         }
 
@@ -62,7 +62,6 @@ export function useApps(): UseAppsReturn {
         setApps(userApps as App[])
       }
     } catch (err) {
-      console.error('Error loading apps:', err)
       setError(err instanceof Error ? err.message : 'Failed to load apps')
       // Fallback to empty array on error
       setApps([])
@@ -107,7 +106,6 @@ export function useApps(): UseAppsReturn {
       setApps(prev => [...prev, newApp as App])
       return newApp as App
     } catch (err) {
-      console.error('Error creating app:', err)
       setError(err instanceof Error ? err.message : 'Failed to create app')
       return null
     }
@@ -123,7 +121,6 @@ export function useApps(): UseAppsReturn {
         app.id === id ? { ...app, ...data } : app
       ))
     } catch (err) {
-      console.error('Error updating app:', err)
       setError(err instanceof Error ? err.message : 'Failed to update app')
     }
   }, [])
@@ -135,7 +132,6 @@ export function useApps(): UseAppsReturn {
       await deleteApp(id)
       setApps(prev => prev.filter(app => app.id !== id))
     } catch (err) {
-      console.error('Error deleting app:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete app')
     }
   }, [])
