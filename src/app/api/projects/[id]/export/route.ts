@@ -21,8 +21,9 @@ const buildRateLimiter = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const startTime = Date.now();
   const clientId = getClientIdentifier(request);
 
@@ -32,13 +33,13 @@ export async function POST(
     if (!rateLimitResult.success) {
       logger.warn('Rate limit exceeded for mobile build', {
         clientId,
-        projectId: params.id,
+        projectId: id,
         resetAt: new Date(rateLimitResult.resetAt).toISOString()
       });
       return createRateLimitResponse(rateLimitResult.resetAt);
     }
 
-    const projectId = params.id;
+    const projectId = id;
     logApiRequest('POST', `/api/projects/${projectId}/export`, clientId);
 
     const body = await request.json();
@@ -188,12 +189,12 @@ export async function POST(
 
   } catch (error) {
     logError(error instanceof Error ? error : new Error('Export failed'), {
-      projectId: params.id,
+      projectId: id,
       clientId
     });
 
     const totalDuration = Date.now() - startTime;
-    logApiResponse('POST', `/api/projects/${params.id}/export`, 500, totalDuration);
+    logApiResponse('POST', `/api/projects/${id}/export`, 500, totalDuration);
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Export failed' },
@@ -204,13 +205,14 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const startTime = Date.now();
   const clientId = getClientIdentifier(request);
 
   try {
-    const projectId = params.id;
+    const projectId = id;
     logApiRequest('GET', `/api/projects/${projectId}/export`, clientId);
 
     // Listar builds do projeto do banco de dados
@@ -232,12 +234,12 @@ export async function GET(
 
   } catch (error) {
     logError(error instanceof Error ? error : new Error('Failed to list builds'), {
-      projectId: params.id,
+      projectId: id,
       clientId
     });
 
     const duration = Date.now() - startTime;
-    logApiResponse('GET', `/api/projects/${params.id}/export`, 500, duration);
+    logApiResponse('GET', `/api/projects/${id}/export`, 500, duration);
 
     return NextResponse.json(
       { error: 'Failed to list builds' },

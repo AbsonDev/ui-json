@@ -15,8 +15,9 @@ import { getOptionalAuthContext } from '@/lib/auth-middleware';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  const { appId } = await params;
   try {
     // Check if app user is authenticated (optional)
     const authContext = await getOptionalAuthContext(request);
@@ -26,7 +27,7 @@ export async function POST(
     const formData = await request.formData();
 
     // Upload file
-    const result = await uploadFile(params.appId, formData, appUserId);
+    const result = await uploadFile(appId, formData, appUserId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -62,8 +63,9 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  const { appId } = await params;
   try {
     const searchParams = request.nextUrl.searchParams;
 
@@ -77,7 +79,7 @@ export async function GET(
     const authContext = await getOptionalAuthContext(request);
     const appUserId = authContext?.userId;
 
-    const result = await getFiles(params.appId, query, appUserId);
+    const result = await getFiles(appId, query, appUserId);
 
     if (!result.success) {
       return NextResponse.json(

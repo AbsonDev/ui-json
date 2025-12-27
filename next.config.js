@@ -56,10 +56,6 @@ const nextConfig = {
   compress: true,
   // Power by header removal
   poweredByHeader: false,
-  // Enable instrumentation for monitoring
-  experimental: {
-    instrumentationHook: true,
-  },
 }
 
 // Sentry configuration options

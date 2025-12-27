@@ -5,14 +5,15 @@ import { headers } from 'next/headers'
 import { Metadata } from 'next'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const app = await getPublishedApp(params.slug)
+  const { slug } = await params
+  const app = await getPublishedApp(slug)
 
   if (!app) {
     return {
@@ -32,7 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PublishedAppPage({ params }: PageProps) {
-  const app = await getPublishedApp(params.slug)
+  const { slug } = await params
+  const app = await getPublishedApp(slug)
 
   if (!app) {
     notFound()

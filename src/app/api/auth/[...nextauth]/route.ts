@@ -24,5 +24,7 @@ async function POST(request: NextRequest) {
   return originalPOST(request)
 }
 
-export { GET } from '@/lib/auth'
-export { POST }
+// Export GET handler from NextAuth handlers
+const { GET } = handlers
+
+export { GET, POST }

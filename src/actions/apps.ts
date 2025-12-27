@@ -540,7 +540,7 @@ export async function getPublishedApp(slug: string) {
         viewCount: { increment: 1 },
         lastViewedAt: new Date(),
       },
-    }).catch((err) => {
+    }).catch((err: unknown) => {
       logError(err instanceof Error ? err : new Error('Failed to increment view count'))
     })
 

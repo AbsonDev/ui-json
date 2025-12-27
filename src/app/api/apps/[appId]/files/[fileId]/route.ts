@@ -8,10 +8,11 @@ import { getOptionalAuthContext } from '@/lib/auth-middleware';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string; fileId: string } }
+  { params }: { params: Promise<{ appId: string; fileId: string }> }
 ) {
+  const { fileId } = await params;
   try {
-    const result = await getFile(params.fileId);
+    const result = await getFile(fileId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -39,14 +40,15 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { appId: string; fileId: string } }
+  { params }: { params: Promise<{ appId: string; fileId: string }> }
 ) {
+  const { fileId } = await params;
   try {
     // Check if app user is authenticated (optional)
     const authContext = await getOptionalAuthContext(request);
     const appUserId = authContext?.userId;
 
-    const result = await deleteFile(params.fileId, appUserId);
+    const result = await deleteFile(fileId, appUserId);
 
     if (!result.success) {
       return NextResponse.json(

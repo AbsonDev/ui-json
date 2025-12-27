@@ -32,9 +32,9 @@ import { SkeletonCard, SkeletonList, SkeletonText } from '@/components/Skeleton'
 import { toast } from 'sonner'
 import { KeyboardShortcutsOverlay } from '@/components/KeyboardShortcuts'
 import { FloatingShapes } from '@/components/GradientBackground'
+import { DesignTokensContext } from '@/contexts/DesignTokensContext'
 
-// --- Context for Design Tokens ---
-export const DesignTokensContext = createContext<Record<string, any>>({})
+// ---
 const resolveToken = (value: any, tokens: Record<string, any>): any => {
     if (typeof value === 'string' && value.startsWith('$')) {
         const tokenName = value.substring(1)

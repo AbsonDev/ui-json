@@ -17,8 +17,9 @@ import type { CreateEntityDataRequest, QueryEntityDataRequest } from '@/types';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string }> }
 ) {
+  const { entityId } = await params;
   try {
     const searchParams = request.nextUrl.searchParams;
 
@@ -32,7 +33,7 @@ export async function GET(
     const authContext = await getOptionalAuthContext(request);
     const appUserId = authContext?.userId;
 
-    const result = await getEntityData(params.entityId, query, appUserId);
+    const result = await getEntityData(entityId, query, appUserId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -63,8 +64,9 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string }> }
 ) {
+  const { entityId } = await params;
   try {
     const body: CreateEntityDataRequest = await request.json();
 
@@ -72,7 +74,7 @@ export async function POST(
     const authContext = await getOptionalAuthContext(request);
     const appUserId = authContext?.userId;
 
-    const result = await createEntityData(params.entityId, body, appUserId);
+    const result = await createEntityData(entityId, body, appUserId);
 
     if (!result.success) {
       return NextResponse.json(

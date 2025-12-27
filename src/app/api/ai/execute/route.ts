@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { GoogleGenAI } from '@google/genai';
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // 1. Autenticação (opcional - pode permitir apps públicos)
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     // 2. Parse request
     const body = await req.json();
@@ -304,7 +303,7 @@ async function incrementAIExecutionUsage(userId: string, appId: string) {
  * Retorna limites de uso atuais
  */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });

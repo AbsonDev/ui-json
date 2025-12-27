@@ -11,8 +11,9 @@ import { extractTokenFromHeader } from '@/lib/jwt';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  await params;
   try {
     const authHeader = request.headers.get('authorization');
     const token = extractTokenFromHeader(authHeader);

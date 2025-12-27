@@ -8,10 +8,11 @@ import type { UpdateEntityRequest } from '@/types';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string }> }
 ) {
+  const { entityId } = await params;
   try {
-    const result = await getEntity(params.entityId);
+    const result = await getEntity(entityId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -36,11 +37,12 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string }> }
 ) {
+  const { entityId } = await params;
   try {
     const body: UpdateEntityRequest = await request.json();
-    const result = await updateEntity(params.entityId, body);
+    const result = await updateEntity(entityId, body);
 
     if (!result.success) {
       return NextResponse.json(
@@ -69,10 +71,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string }> }
 ) {
+  const { entityId } = await params;
   try {
-    const result = await deleteEntity(params.entityId);
+    const result = await deleteEntity(entityId);
 
     if (!result.success) {
       return NextResponse.json(
