@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email/config'
 import { getTrialEmail } from '@/lib/email/templates'
 import { trackEvent } from '@/lib/analytics/config'
+import { env } from '@/lib/env'
+import logger, { logSecurityEvent } from '@/lib/logger'
 
 /**
  * Cron Job: Send Trial Nurture Emails
@@ -17,19 +19,27 @@ import { trackEvent } from '@/lib/analytics/config'
  * - Manual: Call this endpoint daily via cron/scheduler
  */
 
-// Verify cron secret to prevent unauthorized access
-const CRON_SECRET = process.env.CRON_SECRET || 'your-secret-here'
-
 export async function GET(req: NextRequest) {
   // Verify authorization
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  const expectedAuth = `Bearer ${env.CRON_SECRET}`
+
+  if (authHeader !== expectedAuth) {
+    logSecurityEvent('Unauthorized cron job access attempt', {
+      endpoint: '/api/cron/trial-emails',
+      ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
+    })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  console.log('🔄 Running trial email cron job...')
+  logger.info('Running trial email cron job')
 
   try {
+    // Calculate start of month for usage metrics
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
     // Find all users currently in trial
     const trialingUsers = await prisma.subscription.findMany({
       where: {
@@ -41,6 +51,11 @@ export async function GET(req: NextRequest) {
         user: {
           include: {
             apps: true,
+            usageMetrics: {
+              where: {
+                createdAt: { gte: startOfMonth }
+              }
+            }
           }
         }
       }
@@ -83,23 +98,13 @@ export async function GET(req: NextRequest) {
         })
 
         if (existingEmail) {
-          console.log(`⏭️  Skipping user ${user.email} - email already sent`)
+          logger.debug('Skipping user - email already sent', { userId: user.id, email: user.email })
           results.skipped++
           continue
         }
 
-        // Get usage stats
-        const startOfMonth = new Date()
-        startOfMonth.setDate(1)
-        startOfMonth.setHours(0, 0, 0, 0)
-
-        const usageMetrics = await prisma.usageMetric.findMany({
-          where: {
-            userId: user.id,
-            createdAt: { gte: startOfMonth }
-          }
-        })
-
+        // Get usage stats (already loaded with include)
+        const usageMetrics = user.usageMetrics
         const appsCreated = user.apps.length
         const exportsCreated = usageMetrics.filter(m => m.metricType === 'EXPORT').length
         const aiRequestsUsed = usageMetrics.filter(m => m.metricType === 'AI_REQUEST').length
@@ -144,20 +149,30 @@ export async function GET(req: NextRequest) {
             trialDay: daysSinceTrial,
           })
 
-          console.log(`✅ Sent trial day ${daysSinceTrial} email to ${user.email}`)
+          logger.info('Sent trial email', {
+            userId: user.id,
+            email: user.email,
+            trialDay: daysSinceTrial,
+          })
           results.sent++
         } else {
-          console.error(`❌ Failed to send email to ${user.email}:`, result.error)
+          logger.error('Failed to send trial email', {
+            userId: user.id,
+            email: user.email,
+            error: result.error,
+          })
           results.errors++
         }
 
       } catch (error) {
-        console.error(`❌ Error processing user:`, error)
+        logger.error('Error processing user in trial email cron', {
+          error: error instanceof Error ? error.message : String(error),
+        })
         results.errors++
       }
     }
 
-    console.log('✅ Trial email cron job completed:', results)
+    logger.info('Trial email cron job completed', results)
 
     return NextResponse.json({
       success: true,
@@ -165,9 +180,12 @@ export async function GET(req: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Trial email cron job failed:', error)
+    logger.error('Trial email cron job failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
-      { error: 'Cron job failed', details: error },
+      { error: 'Cron job failed' },
       { status: 500 }
     )
   }
