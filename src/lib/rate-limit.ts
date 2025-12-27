@@ -11,6 +11,8 @@
  * - NODE_ENV: 'development' | 'production'
  */
 
+import logger from './logger'
+
 interface RateLimitResult {
   success: boolean
   remaining: number
@@ -156,12 +158,29 @@ class UpstashRateLimiter implements RateLimitBackend {
         resetAt,
       }
     } catch (error) {
-      // Fallback: allow request on Redis failure (fail open)
-      console.error('Rate limit check failed:', error)
-      return {
-        success: true,
-        remaining: limit,
-        resetAt: now + windowMs,
+      // In production, log the error but fail closed (deny request) for security
+      // This prevents rate limit bypass if Redis is temporarily down
+      const isProduction = process.env.NODE_ENV === 'production'
+
+      logger.error('Rate limit check failed', {
+        error: error instanceof Error ? error.message : String(error),
+        identifier,
+      })
+
+      if (isProduction) {
+        // Fail closed: deny the request to prevent abuse
+        return {
+          success: false,
+          remaining: 0,
+          resetAt: now + windowMs,
+        }
+      } else {
+        // Development: fail open (allow request)
+        return {
+          success: true,
+          remaining: limit,
+          resetAt: now + windowMs,
+        }
       }
     }
   }
@@ -177,7 +196,10 @@ class UpstashRateLimiter implements RateLimitBackend {
         },
       })
     } catch (error) {
-      console.error('Rate limit reset failed:', error)
+      logger.error('Rate limit reset failed', {
+        error: error instanceof Error ? error.message : String(error),
+        identifier,
+      })
     }
   }
 }
@@ -190,23 +212,25 @@ function createRateLimiter(): RateLimitBackend {
   const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN
   const isProduction = process.env.NODE_ENV === 'production'
 
-  // Use Upstash in production if configured
-  if (isProduction && upstashUrl && upstashToken) {
-    console.log('✅ Using Upstash Redis for rate limiting (production)')
+  // CRITICAL: In production, Redis is REQUIRED for proper rate limiting
+  if (isProduction) {
+    if (!upstashUrl || !upstashToken) {
+      throw new Error(
+        '❌ PRODUCTION ERROR: Rate limiting requires Redis configuration.\n' +
+        'In-memory rate limiting is NOT safe for multi-instance deployments.\n' +
+        'Required environment variables:\n' +
+        '  - UPSTASH_REDIS_REST_URL\n' +
+        '  - UPSTASH_REDIS_REST_TOKEN\n' +
+        'Get credentials from: https://console.upstash.com/'
+      )
+    }
+
+    logger.info('Using Upstash Redis for rate limiting (production)')
     return new UpstashRateLimiter(upstashUrl, upstashToken)
   }
 
-  // Warn if in production without Upstash
-  if (isProduction) {
-    console.warn(
-      '⚠️  WARNING: Using in-memory rate limiter in production. ' +
-      'This is NOT recommended for multi-instance deployments. ' +
-      'Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for production use.'
-    )
-  } else {
-    console.log('📝 Using in-memory rate limiter (development)')
-  }
-
+  // Development: in-memory is fine
+  logger.info('Using in-memory rate limiter (development)')
   return new InMemoryRateLimiter()
 }
 

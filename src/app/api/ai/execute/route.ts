@@ -4,6 +4,7 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { GoogleGenAI } from '@google/genai';
+import logger from '@/lib/logger';
 
 /**
  * POST /api/ai/execute
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     // 6. Validar API Key do Gemini
     if (!env.GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY não configurada');
+      logger.error('GEMINI_API_KEY not configured', { appId });
       return NextResponse.json(
         { error: 'Serviço de IA temporariamente indisponível' },
         { status: 503 }
@@ -176,7 +177,10 @@ export async function POST(req: NextRequest) {
       responseTime,
     });
   } catch (error: any) {
-    console.error('Erro ao executar IA:', error);
+    logger.error('AI execution failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     // Log de erro
     try {
@@ -204,7 +208,9 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (logError) {
-      console.error('Erro ao salvar log de erro:', logError);
+      logger.error('Failed to save error log', {
+        error: logError instanceof Error ? logError.message : String(logError),
+      });
     }
 
     return NextResponse.json(
