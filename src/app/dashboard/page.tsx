@@ -16,7 +16,8 @@ import { OnboardingWizard, useOnboarding } from '@/components/OnboardingWizard'
 import { ExportShareButton } from '@/components/ExportShare'
 import { VersionHistoryButton, useVersionHistory } from '@/components/VersionHistory'
 import { CommandPalette } from '@/components/CommandPalette'
-import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Sparkles } from 'lucide-react'
+import { PublishDialog } from '@/components/PublishDialog'
+import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Sparkles, Globe, Eye } from 'lucide-react'
 import { useApps } from '@/hooks/useApps'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
@@ -129,6 +130,7 @@ export default function DashboardPage() {
   const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null)
   const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'templates'>('editor')
   const [dialog, setDialog] = useState<DialogProps['config'] | null>(null)
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
   const [databaseData, setDatabaseData] = useState<Record<string, any>>({})
   const [session, setSession] = useState<{ user: any } | null>(null)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -562,7 +564,7 @@ export default function DashboardPage() {
                     >
                     {apps.map((app, index) => (
                         <option key={app.id} value={index} className="text-gray-900">
-                        {app.name}
+                        {app.isPublic ? '🌐 ' : ''}{app.name}{app.isPublic && app.viewCount ? ` (${app.viewCount} views)` : ''}
                         </option>
                     ))}
                     </select>
@@ -596,6 +598,17 @@ export default function DashboardPage() {
                           appJson={jsonString}
                           appId={currentApp.id}
                         />
+                        <button
+                          onClick={() => setShowPublishDialog(true)}
+                          title={currentApp.isPublic ? "Manage Published App" : "Publish App"}
+                          className={`p-2 rounded-full focus:outline-none focus:ring-2 ${
+                            currentApp.isPublic
+                              ? 'text-green-600 bg-green-50 hover:bg-green-100 focus:ring-green-500'
+                              : 'text-gray-600 hover:bg-gray-100 focus:ring-blue-500'
+                          }`}
+                        >
+                          {currentApp.isPublic ? <Eye size={20} /> : <Globe size={20} />}
+                        </button>
                       </>
                     )}
                 </div>
@@ -751,6 +764,22 @@ export default function DashboardPage() {
               </div>
             </main>
             {dialog && <CustomDialog config={dialog} onClose={() => setDialog(null)} />}
+            {showPublishDialog && currentApp && (
+              <PublishDialog
+                app={{
+                  id: currentApp.id,
+                  name: currentApp.name,
+                  isPublic: currentApp.isPublic,
+                  publishedSlug: currentApp.publishedSlug || null,
+                }}
+                onClose={() => setShowPublishDialog(false)}
+                onPublished={() => {
+                  // Refresh apps list
+                  refetch()
+                  setShowPublishDialog(false)
+                }}
+              />
+            )}
             <CommandPalette
               onCreateApp={handleCreateApp}
               onOpenTemplates={() => setActiveTab('templates')}
