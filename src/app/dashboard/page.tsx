@@ -11,6 +11,10 @@ import { DatabaseEditor } from '@/components/DatabaseEditor'
 import { AuthScreen } from '@/components/AuthScreen'
 import { FlowBuilder } from '@/components/FlowBuilder'
 import { Snippets } from '@/components/Snippets'
+import EntityManager from '@/components/EntityManager'
+import DataManager from '@/components/DataManager'
+import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Server } from 'lucide-react'
+import type { EntityResponse } from '@/types'
 import { TemplatesGallery } from '@/components/TemplatesGallery'
 import { OnboardingWizard, useOnboarding } from '@/components/OnboardingWizard'
 import { ExportShareButton } from '@/components/ExportShare'
@@ -135,6 +139,7 @@ export default function DashboardPage() {
   const [currentScreenId, setCurrentScreenId] = useState<string | null>(null)
   const [formState, setFormState] = useState<Record<string, any>>({})
   const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null)
+  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'backend'>('editor')
   const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'templates'>('editor')
   const [dialog, setDialog] = useState<DialogProps['config'] | null>(null)
   const [showPublishDialog, setShowPublishDialog] = useState(false)
@@ -142,6 +147,9 @@ export default function DashboardPage() {
   const [session, setSession] = useState<{ user: any } | null>(null)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
+
+  // Backend (BaaS) state
+  const [selectedEntity, setSelectedEntity] = useState<EntityResponse | null>(null)
 
   // Load database data from current app
   useEffect(() => {
@@ -668,6 +676,7 @@ export default function DashboardPage() {
                   {activeTab === 'database' && 'Database Manager'}
                   {activeTab === 'flow' && 'Screen Flow'}
                   {activeTab === 'snippets' && 'Component Library'}
+                  {activeTab === 'backend' && (selectedEntity ? selectedEntity.displayName + ' Data' : 'Backend Entities')}
                   {activeTab === 'templates' && 'Templates Gallery'}
                 </h2>
                 <div className={`flex-1 flex flex-col border rounded-lg shadow-inner ${error && activeTab === 'editor' ? 'border-red-500' : 'border-gray-300'}`}>
@@ -690,6 +699,10 @@ export default function DashboardPage() {
                     <button onClick={() => setActiveTab('ai')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'ai' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                       <Wand2 size={16} />
                       AI Assistant
+                    </button>
+                    <button onClick={() => { setActiveTab('backend'); setSelectedEntity(null); }} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'backend' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                      <Server size={16} />
+                      Backend
                     </button>
                     <button onClick={() => setActiveTab('database')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'database' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                       <Database size={16} />
@@ -728,6 +741,21 @@ export default function DashboardPage() {
                         uiApp={uiApp}
                         setCurrentScreenId={setCurrentScreenId}
                       />
+                    )}
+                    {activeTab === 'backend' && currentApp && (
+                      <div className="flex-1 overflow-y-auto p-4">
+                        {selectedEntity ? (
+                          <DataManager
+                            entity={selectedEntity}
+                            onBack={() => setSelectedEntity(null)}
+                          />
+                        ) : (
+                          <EntityManager
+                            appId={currentApp.id}
+                            onSelectEntity={(entity) => setSelectedEntity(entity)}
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

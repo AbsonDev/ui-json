@@ -329,3 +329,366 @@ export interface UIApp {
   screens: Record<string, UIScreen>;
   initialScreen: string;
 }
+
+// ============================================
+// Backend as a Service (BaaS) Types
+// ============================================
+
+// Field types supported by BaaS
+export type EntityFieldType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'email'
+  | 'url'
+  | 'text'      // Long text
+  | 'json'      // JSON object
+  | 'relation'; // Relation to another entity
+
+// Validation rule types
+export interface ValidationRule {
+  type: 'required' | 'min' | 'max' | 'pattern' | 'email' | 'url' | 'unique' | 'custom';
+  value?: any;
+  message?: string;
+}
+
+// Entity field definition
+export interface EntityField {
+  name: string;
+  type: EntityFieldType;
+  displayName?: string;
+  description?: string;
+  required?: boolean;
+  unique?: boolean;
+  defaultValue?: any;
+  validation?: ValidationRule[];
+
+  // For relations
+  relationTo?: string;      // Entity name
+  relationType?: '1:1' | '1:N' | 'N:N';
+
+  // UI hints
+  placeholder?: string;
+  helpText?: string;
+
+  // Advanced options
+  indexed?: boolean;
+  searchable?: boolean;
+  sortable?: boolean;
+}
+
+// Permission types for entities
+export type EntityPermission = 'public' | 'authenticated' | 'owner' | 'admin';
+export type EntityWritePermission = 'authenticated' | 'owner' | 'admin';
+
+// Entity definition
+export interface Entity {
+  id: string;
+  name: string;
+  displayName?: string;
+  description?: string;
+  fields: EntityField[];
+  timestamps?: boolean;
+  softDelete?: boolean;
+  readPermission?: EntityPermission;
+  writePermission?: EntityWritePermission;
+  deletePermission?: EntityWritePermission;
+  appId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Entity data record
+export interface EntityData {
+  id: string;
+  entityId: string;
+  data: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
+}
+
+// API Request/Response types
+export interface CreateEntityRequest {
+  name: string;
+  displayName?: string;
+  description?: string;
+  fields: EntityField[];
+  timestamps?: boolean;
+  softDelete?: boolean;
+  readPermission?: EntityPermission;
+  writePermission?: EntityWritePermission;
+  deletePermission?: EntityWritePermission;
+}
+
+export interface UpdateEntityRequest {
+  displayName?: string;
+  description?: string;
+  fields?: EntityField[];
+  timestamps?: boolean;
+  softDelete?: boolean;
+  readPermission?: EntityPermission;
+  writePermission?: EntityWritePermission;
+  deletePermission?: EntityWritePermission;
+}
+
+export interface CreateEntityDataRequest {
+  data: Record<string, any>;
+}
+
+export interface UpdateEntityDataRequest {
+  data: Record<string, any>;
+}
+
+export interface QueryEntityDataRequest {
+  where?: Record<string, any>;
+  orderBy?: Record<string, 'asc' | 'desc'>;
+  limit?: number;
+  offset?: number;
+  includeDeleted?: boolean;
+}
+
+export interface EntityDataResponse {
+  id: string;
+  data: Record<string, any>;
+  appUserId?: string; // Optional - set when data is owned by an app user
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface EntityResponse {
+  id: string;
+  name: string;
+  displayName?: string;
+  description?: string;
+  fields: EntityField[];
+  timestamps: boolean;
+  softDelete: boolean;
+  readPermission: EntityPermission;
+  writePermission: EntityWritePermission;
+  deletePermission: EntityWritePermission;
+  recordCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+export interface BaaSErrorResponse {
+  error: string;
+  message: string;
+  details?: any;
+}
+
+// ============================================
+// App User Authentication Types
+// ============================================
+
+export interface AppUser {
+  id: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  emailVerified: boolean;
+  appId: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt?: Date | null;
+}
+
+export interface AppSession {
+  id: string;
+  token: string;
+  expiresAt: Date;
+  appUserId: string;
+  userAgent?: string;
+  ipAddress?: string;
+  createdAt: Date;
+  lastUsedAt: Date;
+}
+
+// Auth Request/Response types
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: AppUserResponse;
+  token?: string;
+  expiresAt?: string;
+  error?: string;
+}
+
+export interface AppUserResponse {
+  id: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  emailVerified: boolean;
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string | null;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  avatar?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+// ============================================
+// File Storage Types
+// ============================================
+
+export interface File {
+  id: string;
+  originalName: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  path: string;
+  url: string;
+  thumbnailPath?: string | null;
+  thumbnailUrl?: string | null;
+  width?: number | null;
+  height?: number | null;
+  isPublic: boolean;
+  appId: string;
+  appUserId?: string | null;
+  userId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface FileResponse {
+  id: string;
+  originalName: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  thumbnailUrl?: string | null;
+  width?: number | null;
+  height?: number | null;
+  isPublic: boolean;
+  appUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UploadFileRequest {
+  isPublic?: boolean;
+}
+
+export interface UploadFileResponse {
+  success: boolean;
+  file?: FileResponse;
+  error?: string;
+}
+
+export interface ListFilesRequest {
+  limit?: number;
+  offset?: number;
+  mimeType?: string; // Filter by mime type (e.g., "image/*")
+  appUserId?: string; // Filter by app user (admin only)
+}
+
+export interface FileQuota {
+  used: number;      // Bytes used
+  limit: number;     // Bytes limit
+  count: number;     // Number of files
+  countLimit: number; // Max number of files
+}
+
+export interface FileQuotaResponse {
+  success: boolean;
+  quota?: FileQuota;
+  error?: string;
+}
+
+// Allowed file types and limits
+export const FILE_UPLOAD_CONFIG = {
+  // Max file size: 10MB
+  MAX_FILE_SIZE: 10 * 1024 * 1024,
+
+  // Max total storage per app user: 100MB
+  MAX_STORAGE_PER_USER: 100 * 1024 * 1024,
+
+  // Max files per app user: 100
+  MAX_FILES_PER_USER: 100,
+
+  // Allowed mime types
+  ALLOWED_MIME_TYPES: [
+    // Images
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+
+    // Documents
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
+    // Audio
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/wav',
+    'audio/ogg',
+
+    // Video
+    'video/mp4',
+    'video/mpeg',
+    'video/webm',
+    'video/quicktime',
+
+    // Archives
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/x-rar-compressed',
+  ],
+
+  // Thumbnail settings
+  THUMBNAIL_WIDTH: 200,
+  THUMBNAIL_HEIGHT: 200,
+  THUMBNAIL_QUALITY: 80,
+} as const;

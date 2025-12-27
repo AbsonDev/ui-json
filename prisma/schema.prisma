@@ -35,6 +35,7 @@ model User {
   sessions           Session[]
   apps               App[]                // Apps created by user
   databaseConnections DatabaseConnection[] // Database connections owned by user
+  files              File[]               // Files uploaded by user (admin)
   subscriptions      Subscription[]       // User subscriptions
   usageMetrics       UsageMetric[]        // Usage tracking
   invoices           Invoice[]            // Billing invoices
@@ -138,6 +139,15 @@ model App {
 
   // Mobile builds
   builds      Build[]
+
+  // Backend as a Service - Entities
+  entities    Entity[]
+
+  // App Users (authentication for end users)
+  appUsers    AppUser[]
+
+  // File Storage
+  files       File[]
 
   // AI usage in this app
   appAIUsage  AppAIUsage[]
@@ -249,6 +259,181 @@ model Build {
 }
 
 // ============================================
+// Backend as a Service (BaaS) Models
+// ============================================
+
+model Entity {
+  id          String   @id @default(cuid())
+  name        String   // "Product", "Category", "User", etc.
+  displayName String?  // "Products", "Categories" (plural, user-friendly)
+  description String?  // Description of what this entity represents
+
+  // Schema definition (stored as JSON)
+  fields      Json     // Array of field definitions: [{ name: "title", type: "string", required: true, ... }]
+
+  // Options
+  timestamps  Boolean  @default(true) // Auto-add createdAt/updatedAt fields
+  softDelete  Boolean  @default(false) // Add deletedAt field for soft deletes
+
+  // Permissions (access control for app users)
+  // "public" = anyone can read (no auth required)
+  // "authenticated" = only authenticated app users can read
+  // "owner" = only data owner can read (requires appUserId)
+  // "admin" = only app admin can read (via dashboard)
+  readPermission  String @default("authenticated") // public | authenticated | owner | admin
+  writePermission String @default("owner")          // authenticated | owner | admin
+  deletePermission String @default("owner")         // owner | admin
+
+  // Relation to app
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Entity data records
+  records     EntityData[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Ensure unique entity names per app
+  @@unique([appId, name])
+  @@index([appId])
+  @@map("entities")
+}
+
+model EntityData {
+  id          String   @id @default(cuid())
+
+  // Data payload (stored as JSON)
+  data        Json     // Actual data: { "title": "iPhone 15", "price": 999, ... }
+
+  // Soft delete support
+  deletedAt   DateTime?
+
+  // User ownership (optional - for user-specific data)
+  appUserId   String?
+  appUser     AppUser? @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  // Relation to entity
+  entityId    String
+  entity      Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityId])
+  @@index([deletedAt])
+  @@index([appUserId])
+  @@map("entity_data")
+}
+
+// ============================================
+// App User Authentication Models
+// ============================================
+
+model AppUser {
+  id            String   @id @default(cuid())
+  email         String
+  passwordHash  String   // hashed with bcrypt
+  name          String?
+  avatar        String?
+  emailVerified Boolean  @default(false)
+
+  // App relation
+  appId         String
+  app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Sessions for this user
+  sessions      AppSession[]
+
+  // Data owned by this user
+  entityData    EntityData[]
+
+  // Files owned by this user
+  files         File[]
+
+  // Metadata
+  metadata      Json?    // Custom user data (profile fields, preferences, etc.)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+
+  // Ensure unique email per app
+  @@unique([appId, email])
+  @@index([appId])
+  @@index([email])
+  @@map("app_users")
+}
+
+model AppSession {
+  id           String   @id @default(cuid())
+  token        String   @unique // JWT token
+  expiresAt    DateTime
+
+  // User relation
+  appUserId    String
+  appUser      AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  // Device/Client info
+  userAgent    String?
+  ipAddress    String?
+
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  @@index([appUserId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("app_sessions")
+}
+
+// ============================================
+// File Storage Models
+// ============================================
+
+model File {
+  id            String   @id @default(cuid())
+
+  // File metadata
+  originalName  String   // Original filename uploaded by user
+  filename      String   // Stored filename (unique)
+  mimeType      String   // image/jpeg, application/pdf, etc.
+  size          Int      // File size in bytes
+  path          String   // Relative path in storage
+  url           String   // Public URL to access file
+
+  // Thumbnail (for images)
+  thumbnailPath String?  // Path to thumbnail
+  thumbnailUrl  String?  // URL to thumbnail
+
+  // Image metadata (if applicable)
+  width         Int?     // Image width in pixels
+  height        Int?     // Image height in pixels
+
+  // Permissions
+  isPublic      Boolean  @default(false) // If true, anyone can access without auth
+
+  // Ownership
+  appId         String
+  app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Optional: owned by app user
+  appUserId     String?
+  appUser       AppUser? @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+
+  // Optional: owned by platform user (admin)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([appId])
+  @@index([appUserId])
+  @@index([userId])
+  @@index([mimeType])
+  @@index([isPublic])
+  @@map("files")
 // Subscription & Billing Models
 // ============================================
 
