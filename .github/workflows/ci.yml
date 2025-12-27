@@ -110,9 +110,9 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
-          NEXTAUTH_SECRET: "test-secret-key-for-ci-pipeline-only"
+          NEXTAUTH_SECRET: "test-secret-key-for-ci-pipeline-only-32chars"
           NEXTAUTH_URL: "http://localhost:3000"
-          ENCRYPTION_KEY: "test-encryption-key-32-chars-"
+          ENCRYPTION_KEY: "12345678901234567890123456789012"
           GEMINI_API_KEY: "test-gemini-key"
           STRIPE_SECRET_KEY: "sk_test_mock"
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_mock"
@@ -122,7 +122,7 @@ jobs:
           STRIPE_PRICE_TEAM_MONTHLY: "price_mock"
           STRIPE_PRICE_TEAM_YEARLY: "price_mock"
           RESEND_API_KEY: "re_mock"
-          CRON_SECRET: "mock-cron-secret-for-testing-only"
+          CRON_SECRET: "mock-cron-secret-for-testing-only-32chars-long"
           UPSTASH_REDIS_REST_URL: "http://localhost:6379"
           UPSTASH_REDIS_REST_TOKEN: "mock_token"
           NEXT_PUBLIC_MIXPANEL_TOKEN: "mock_mixpanel"
@@ -133,9 +133,9 @@ jobs:
         continue-on-error: true
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
-          NEXTAUTH_SECRET: "test-secret-key-for-ci-pipeline-only"
+          NEXTAUTH_SECRET: "test-secret-key-for-ci-pipeline-only-32chars"
           NEXTAUTH_URL: "http://localhost:3000"
-          ENCRYPTION_KEY: "test-encryption-key-32-chars-"
+          ENCRYPTION_KEY: "12345678901234567890123456789012"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -172,9 +172,9 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: "postgresql://mock:mock@localhost:5432/mock"
-          NEXTAUTH_SECRET: "mock-secret-for-build-validation"
+          NEXTAUTH_SECRET: "mock-secret-for-build-validation-32chars-long"
           NEXTAUTH_URL: "http://localhost:3000"
-          ENCRYPTION_KEY: "mock-encryption-key-32-chars-x"
+          ENCRYPTION_KEY: "12345678901234567890123456789012"
           GEMINI_API_KEY: "mock-gemini-key"
           STRIPE_SECRET_KEY: "sk_test_mock"
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_mock"
@@ -184,7 +184,7 @@ jobs:
           STRIPE_PRICE_TEAM_MONTHLY: "price_mock"
           STRIPE_PRICE_TEAM_YEARLY: "price_mock"
           RESEND_API_KEY: "re_mock"
-          CRON_SECRET: "mock-cron-secret-32-characters-"
+          CRON_SECRET: "mock-cron-secret-for-build-32chars-long-key"
           UPSTASH_REDIS_REST_URL: "http://localhost:6379"
           UPSTASH_REDIS_REST_TOKEN: "mock_token"
           NEXT_PUBLIC_MIXPANEL_TOKEN: "mock_mixpanel"

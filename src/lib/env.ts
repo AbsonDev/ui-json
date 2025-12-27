@@ -132,8 +132,12 @@ const envSchema = z.object({
 /**
  * Validated and typed environment variables
  * Use this instead of process.env for type safety
+ *
+ * Note: Validation is skipped if SKIP_ENV_VALIDATION is set (e.g., in CI/CD)
  */
-export const env = envSchema.parse(process.env)
+export const env = process.env.SKIP_ENV_VALIDATION
+  ? (process.env as z.infer<typeof envSchema>)
+  : envSchema.parse(process.env)
 
 /**
  * Type-safe environment variable access
@@ -181,7 +185,7 @@ export function validateEnv(): void {
   }
 }
 
-// Auto-validate in non-test environments
-if (process.env.NODE_ENV !== 'test') {
+// Auto-validate in non-test environments (unless explicitly skipped)
+if (process.env.NODE_ENV !== 'test' && !process.env.SKIP_ENV_VALIDATION) {
   validateEnv()
 }
