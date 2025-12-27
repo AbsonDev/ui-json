@@ -1,0 +1,434 @@
+{
+  "version": "1.0",
+  "app": {
+    "name": "Clínica Saúde Total - Com IA",
+    "theme": {
+      "primaryColor": "#2563eb",
+      "secondaryColor": "#10b981",
+      "backgroundColor": "#f9fafb",
+      "textColor": "#1f2937"
+    },
+    "designTokens": {
+      "spacingSmall": 8,
+      "spacingMedium": 16,
+      "spacingLarge": 24
+    }
+  },
+  "initialScreen": "home",
+  "screens": {
+    "home": {
+      "id": "home",
+      "title": "Início",
+      "components": [
+        {
+          "type": "container",
+          "id": "header",
+          "layout": "vertical",
+          "padding": "$spacingLarge",
+          "components": [
+            {
+              "type": "image",
+              "id": "logo",
+              "source": "https://via.placeholder.com/300x100/2563eb/ffffff?text=Clínica+Saúde+Total",
+              "width": "100%",
+              "borderRadius": 10
+            },
+            {
+              "type": "text",
+              "id": "welcome",
+              "content": "Bem-vindo!",
+              "fontSize": 28,
+              "fontWeight": "bold",
+              "color": "#1f2937",
+              "marginTop": "$spacingMedium"
+            },
+            {
+              "type": "text",
+              "id": "subtitle",
+              "content": "Agende consultas e tire dúvidas com nossa IA",
+              "fontSize": 16,
+              "color": "#6b7280",
+              "marginBottom": "$spacingMedium"
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "id": "triagem-card",
+          "padding": "$spacingMedium",
+          "backgroundColor": "#eff6ff",
+          "borderRadius": 12,
+          "marginBottom": "$spacingMedium",
+          "components": [
+            {
+              "type": "text",
+              "id": "triagem-title",
+              "content": "🤖 Triagem Inteligente",
+              "fontSize": 18,
+              "fontWeight": "bold",
+              "marginBottom": "$spacingSmall"
+            },
+            {
+              "type": "text",
+              "id": "triagem-desc",
+              "content": "Descreva seus sintomas e nossa IA sugerirá a especialidade ideal",
+              "fontSize": 14,
+              "color": "#6b7280",
+              "marginBottom": "$spacingMedium"
+            },
+            {
+              "type": "button",
+              "id": "btn-triagem",
+              "text": "Iniciar Triagem com IA",
+              "variant": "primary",
+              "fullWidth": true,
+              "icon": "sparkles",
+              "action": {
+                "type": "navigate",
+                "target": "triagem"
+              }
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "id": "btn-agendar",
+          "text": "📅 Agendar Consulta",
+          "variant": "primary",
+          "fullWidth": true,
+          "marginBottom": "$spacingSmall",
+          "action": {
+            "type": "navigate",
+            "target": "agendar"
+          }
+        },
+        {
+          "type": "button",
+          "id": "btn-chatbot",
+          "text": "💬 Fale com Assistente Virtual",
+          "variant": "secondary",
+          "fullWidth": true,
+          "marginBottom": "$spacingSmall",
+          "action": {
+            "type": "navigate",
+            "target": "chatbot"
+          }
+        },
+        {
+          "type": "button",
+          "id": "btn-consultas",
+          "text": "📋 Minhas Consultas",
+          "variant": "outline",
+          "fullWidth": true,
+          "action": {
+            "type": "navigate",
+            "target": "consultas"
+          }
+        }
+      ]
+    },
+    "triagem": {
+      "id": "triagem",
+      "title": "Triagem Inteligente",
+      "components": [
+        {
+          "type": "container",
+          "id": "triagem-container",
+          "layout": "vertical",
+          "padding": "$spacingLarge",
+          "components": [
+            {
+              "type": "text",
+              "id": "triagem-header",
+              "content": "🤖 Triagem com IA",
+              "fontSize": 24,
+              "fontWeight": "bold",
+              "marginBottom": "$spacingMedium"
+            },
+            {
+              "type": "text",
+              "id": "triagem-instructions",
+              "content": "Descreva seus sintomas em detalhes para que nossa IA possa sugerir a especialidade mais adequada.",
+              "fontSize": 14,
+              "color": "#6b7280",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "input",
+              "id": "sintomas",
+              "label": "Sintomas",
+              "placeholder": "Ex: Dor de cabeça forte há 3 dias, tontura...",
+              "inputType": "text",
+              "required": true
+            },
+            {
+              "type": "input",
+              "id": "idade",
+              "label": "Idade",
+              "placeholder": "Sua idade",
+              "inputType": "number",
+              "required": true,
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "aiassistant",
+              "id": "ai-triagem",
+              "prompt": "Paciente de {{idade}} anos com os seguintes sintomas: {{sintomas}}. Baseado nisso, sugira a especialidade médica mais adequada e explique brevemente o motivo.",
+              "inputFields": ["sintomas", "idade"],
+              "outputField": "especialidadeSugerida",
+              "buttonText": "🔍 Analisar Sintomas com IA",
+              "loadingText": "Analisando...",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "input",
+              "id": "especialidadeSugerida",
+              "label": "Sugestão da IA",
+              "placeholder": "A sugestão aparecerá aqui...",
+              "inputType": "text",
+              "disabled": true,
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "button",
+              "id": "btn-agendar-triagem",
+              "text": "Agendar Consulta",
+              "variant": "primary",
+              "fullWidth": true,
+              "marginBottom": "$spacingSmall",
+              "action": {
+                "type": "navigate",
+                "target": "agendar"
+              }
+            },
+            {
+              "type": "button",
+              "id": "btn-voltar-triagem",
+              "text": "← Voltar",
+              "variant": "text",
+              "fullWidth": true,
+              "action": {
+                "type": "goBack"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "chatbot": {
+      "id": "chatbot",
+      "title": "Assistente Virtual",
+      "components": [
+        {
+          "type": "container",
+          "id": "chatbot-container",
+          "layout": "vertical",
+          "padding": "$spacingLarge",
+          "components": [
+            {
+              "type": "text",
+              "id": "chatbot-title",
+              "content": "💬 Assistente Virtual",
+              "fontSize": 24,
+              "fontWeight": "bold",
+              "marginBottom": "$spacingMedium"
+            },
+            {
+              "type": "text",
+              "id": "chatbot-desc",
+              "content": "Tire suas dúvidas sobre a clínica, horários, especialidades e mais!",
+              "fontSize": 14,
+              "color": "#6b7280",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "aichat",
+              "id": "chat",
+              "persona": "Você é um assistente virtual de uma clínica médica. Responda perguntas sobre:\n- Horários de funcionamento: Segunda a Sexta 8h-18h, Sábado 8h-12h\n- Especialidades: Clínica Geral, Cardiologia, Dermatologia, Pediatria, Ortopedia\n- Convênios: Aceitamos Unimed, Bradesco, SulAmérica\n- Endereço: Rua das Flores, 123 - Centro\n- Telefone: (11) 1234-5678\n\nSeja prestativo, educado e conciso.",
+              "welcomeMessage": "Olá! Sou o assistente virtual da Clínica Saúde Total. Como posso ajudá-lo hoje?",
+              "placeholder": "Digite sua pergunta...",
+              "height": 500,
+              "showHistory": true,
+              "maxMessages": 50
+            },
+            {
+              "type": "button",
+              "id": "btn-voltar-chat",
+              "text": "← Voltar",
+              "variant": "text",
+              "fullWidth": true,
+              "marginTop": "$spacingMedium",
+              "action": {
+                "type": "goBack"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "agendar": {
+      "id": "agendar",
+      "title": "Agendar Consulta",
+      "components": [
+        {
+          "type": "container",
+          "id": "agendar-container",
+          "layout": "vertical",
+          "padding": "$spacingLarge",
+          "components": [
+            {
+              "type": "text",
+              "id": "agendar-title",
+              "content": "📅 Agendar Consulta",
+              "fontSize": 24,
+              "fontWeight": "bold",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "select",
+              "id": "especialidade",
+              "label": "Especialidade",
+              "placeholder": "Selecione...",
+              "required": true,
+              "options": [
+                {"value": "geral", "label": "Clínica Geral"},
+                {"value": "cardio", "label": "Cardiologia"},
+                {"value": "derma", "label": "Dermatologia"},
+                {"value": "pediatria", "label": "Pediatria"},
+                {"value": "ortopedia", "label": "Ortopedia"}
+              ]
+            },
+            {
+              "type": "select",
+              "id": "medico",
+              "label": "Médico(a)",
+              "placeholder": "Selecione...",
+              "required": true,
+              "options": [
+                {"value": "joao", "label": "Dr. João Silva"},
+                {"value": "maria", "label": "Dra. Maria Santos"},
+                {"value": "pedro", "label": "Dr. Pedro Costa"},
+                {"value": "ana", "label": "Dra. Ana Oliveira"}
+              ]
+            },
+            {
+              "type": "datepicker",
+              "id": "data",
+              "label": "Data",
+              "required": true
+            },
+            {
+              "type": "timepicker",
+              "id": "horario",
+              "label": "Horário",
+              "required": true
+            },
+            {
+              "type": "input",
+              "id": "observacoes",
+              "label": "Observações",
+              "placeholder": "Informações adicionais...",
+              "inputType": "text",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "button",
+              "id": "btn-confirmar",
+              "text": "✅ Confirmar Agendamento",
+              "variant": "primary",
+              "fullWidth": true,
+              "marginBottom": "$spacingSmall",
+              "action": {
+                "type": "popup",
+                "title": "Sucesso!",
+                "message": "Sua consulta foi agendada com sucesso! Você receberá um email de confirmação em breve.",
+                "variant": "info",
+                "buttons": [
+                  {
+                    "text": "Ver Consultas",
+                    "variant": "primary",
+                    "action": {
+                      "type": "navigate",
+                      "target": "consultas"
+                    }
+                  },
+                  {
+                    "text": "Voltar ao Início",
+                    "variant": "text",
+                    "action": {
+                      "type": "navigate",
+                      "target": "home"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "button",
+              "id": "btn-voltar-agendar",
+              "text": "← Voltar",
+              "variant": "text",
+              "fullWidth": true,
+              "action": {
+                "type": "goBack"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "consultas": {
+      "id": "consultas",
+      "title": "Minhas Consultas",
+      "components": [
+        {
+          "type": "container",
+          "id": "consultas-container",
+          "layout": "vertical",
+          "padding": "$spacingLarge",
+          "components": [
+            {
+              "type": "text",
+              "id": "consultas-title",
+              "content": "📋 Minhas Consultas",
+              "fontSize": 24,
+              "fontWeight": "bold",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "text",
+              "id": "empty-message",
+              "content": "Você ainda não tem consultas agendadas.",
+              "fontSize": 16,
+              "color": "#6b7280",
+              "textAlign": "center",
+              "marginBottom": "$spacingLarge"
+            },
+            {
+              "type": "button",
+              "id": "btn-nova-consulta",
+              "text": "Agendar Nova Consulta",
+              "variant": "primary",
+              "fullWidth": true,
+              "marginBottom": "$spacingSmall",
+              "action": {
+                "type": "navigate",
+                "target": "agendar"
+              }
+            },
+            {
+              "type": "button",
+              "id": "btn-voltar-consultas",
+              "text": "← Voltar",
+              "variant": "text",
+              "fullWidth": true,
+              "action": {
+                "type": "goBack"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

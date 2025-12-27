@@ -1,13 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const { track } = useAnalytics()
+
+  // Track registration page view
+  useEffect(() => {
+    track.trackRegistrationStarted()
+  }, [track])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -38,6 +45,9 @@ export default function RegisterPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Registration failed')
       }
+
+      // Track successful registration
+      // Note: Full tracking with userId happens in the API route
 
       // Redirect to login page
       router.push('/login?registered=true')

@@ -22,6 +22,11 @@ model User {
   password      String // hashed with bcrypt
   image         String?
   isAdmin       Boolean   @default(false)
+
+  // Freemium fields
+  planTier         PlanTier @default(FREE)
+  stripeCustomerId String?  @unique
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -31,8 +36,28 @@ model User {
   apps               App[]                // Apps created by user
   databaseConnections DatabaseConnection[] // Database connections owned by user
   files              File[]               // Files uploaded by user (admin)
+  subscriptions      Subscription[]       // User subscriptions
+  usageMetrics       UsageMetric[]        // Usage tracking
+  invoices           Invoice[]            // Billing invoices
+  emailLogs          EmailLog[]           // Email communication logs
+  aiUsage            AIUsage[]            // AI request tracking (for editor)
+  aiDailyLimits      AIDailyLimit[]       // AI daily limit tracking (for editor)
+  appAIUsage         AppAIUsage[]         // AI usage in client apps
+  aiExecutionLimits  AIExecutionLimit[]   // AI execution limits for client apps
 
+  @@index([email, isAdmin]) // Composite index for admin queries
+  @@index([createdAt]) // Index for sorting by creation date
+  @@index([planTier]) // Index for plan-based queries
+  @@index([stripeCustomerId]) // Index for Stripe lookups
   @@map("users")
+}
+
+// Plan tier enumeration
+enum PlanTier {
+  FREE
+  PRO
+  TEAM
+  ENTERPRISE
 }
 
 model Account {
@@ -52,6 +77,8 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId]) // Index for user account lookups
+  @@index([userId, provider]) // Composite index for provider-specific queries
   @@map("accounts")
 }
 
@@ -62,6 +89,9 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId]) // Index for user session lookups
+  @@index([expires]) // Index for expired session cleanup
+  @@index([userId, expires]) // Composite index for active user sessions
   @@map("sessions")
 }
 
@@ -94,6 +124,15 @@ model App {
   // Database state for this app (usado quando useLocalStorage = true)
   databaseData Json?    // Stores the dynamic database content
 
+  // Publishing & Analytics
+  publishedAt    DateTime? // When the app was published
+  publishedSlug  String?   @unique // Custom URL slug (e.g., "my-todo-app")
+  viewCount      Int       @default(0) // Total views
+  lastViewedAt   DateTime? // Last time someone viewed this published app
+
+  // Watermark control (PRO+ can remove)
+  showWatermark  Boolean   @default(true)
+
   // Ownership
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -110,11 +149,23 @@ model App {
   // File Storage
   files       File[]
 
+  // AI usage in this app
+  appAIUsage  AppAIUsage[]
+
+  // Published app views
+  appViews    AppView[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
   @@index([databaseConnectionId])
+  @@index([userId, isPublic]) // Composite index for public app queries
+  @@index([userId, updatedAt]) // Composite index for recently updated apps
+  @@index([userId, createdAt]) // Composite index for recently created apps
+  @@index([isPublic, createdAt]) // Index for public app discovery
+  @@index([useLocalStorage]) // Index for storage type queries
+  @@index([publishedSlug]) // Index for published app lookups
   @@map("apps")
 }
 
@@ -153,6 +204,9 @@ model DatabaseConnection {
 
   @@index([userId])
   @@index([isActive])
+  @@index([userId, isActive]) // Composite index for active user connections
+  @@index([userId, type]) // Composite index for type-specific queries
+  @@index([lastTestedAt]) // Index for connection health monitoring
   @@map("database_connections")
 }
 
@@ -197,6 +251,10 @@ model Build {
   @@index([appId])
   @@index([status])
   @@index([platform])
+  @@index([appId, status]) // Composite index for app build status queries
+  @@index([appId, createdAt]) // Composite index for recent builds
+  @@index([appId, platform, status]) // Composite index for platform-specific queries
+  @@index([status, createdAt]) // Index for global build monitoring
   @@map("builds")
 }
 
@@ -376,4 +434,393 @@ model File {
   @@index([mimeType])
   @@index([isPublic])
   @@map("files")
+// Subscription & Billing Models
+// ============================================
+
+model Subscription {
+  id                    String   @id @default(cuid())
+
+  // Stripe IDs
+  stripeSubscriptionId  String   @unique
+  stripePriceId         String
+  stripeProductId       String
+
+  // Subscription details
+  planTier              PlanTier
+  status                SubscriptionStatus
+
+  // Billing cycle
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean  @default(false)
+  canceledAt            DateTime?
+
+  // Pricing
+  amount                Int      // in cents (e.g., 1900 = $19.00)
+  currency              String   @default("usd")
+  interval              BillingInterval
+
+  // Trial
+  trialStart            DateTime?
+  trialEnd              DateTime?
+
+  // Metadata
+  metadata              Json?
+
+  // User relation
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+model UsageMetric {
+  id          String   @id @default(cuid())
+
+  // User relation
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Metrics tracking
+  appsCount           Int      @default(0)
+  buildsCount         Int      @default(0)
+  exportsCount        Int      @default(0)
+  templatesUsedCount  Int      @default(0)
+  apiCallsCount       Int      @default(0)
+  storageUsedMB       Float    @default(0)
+
+  // Period tracking
+  periodStart         DateTime
+  periodEnd           DateTime
+
+  // Reset tracking
+  resetAt             DateTime?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, periodEnd])
+  @@index([periodEnd])
+  @@map("usage_metrics")
+}
+
+model Invoice {
+  id                  String   @id @default(cuid())
+
+  // Stripe data
+  stripeInvoiceId     String   @unique
+  stripePaymentIntentId String?
+
+  // Invoice details
+  amount              Int      // in cents
+  currency            String   @default("usd")
+  status              InvoiceStatus
+
+  // URLs
+  hostedInvoiceUrl    String?
+  invoicePdf          String?
+
+  // Dates
+  periodStart         DateTime
+  periodEnd           DateTime
+  dueDate             DateTime?
+  paidAt              DateTime?
+
+  // User relation
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeInvoiceId])
+  @@index([status])
+  @@index([userId, createdAt])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+model PlanConfig {
+  id          String   @id @default(cuid())
+
+  planTier    PlanTier @unique
+
+  // Feature limits
+  maxApps             Int      // -1 for unlimited
+  maxBuilds           Int      // per month
+  maxExports          Int      // per month
+  maxTemplates        Int      // -1 for all
+  maxApiCalls         Int      // per month
+  maxStorageMB        Int
+
+  // Feature flags
+  customDomain        Boolean  @default(false)
+  prioritySupport     Boolean  @default(false)
+  removeWatermark     Boolean  @default(false)
+  teamCollaboration   Boolean  @default(false)
+  analytics           Boolean  @default(false)
+  versionHistory      Boolean  @default(false)
+  aiAssistant         Boolean  @default(false)
+
+  // Pricing
+  priceMonthly        Int?     // in cents
+  priceYearly         Int?     // in cents
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("plan_configs")
+}
+
+// ============================================
+// Email Tracking
+// ============================================
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  userId      String
+  emailType   String   // e.g., "trial_day_1", "trial_day_4", etc.
+  subject     String
+  sentAt      DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([emailType])
+  @@index([userId, emailType])
+  @@index([sentAt])
+  @@map("email_logs")
+}
+
+// ============================================
+// AI Usage Tracking
+// ============================================
+
+model AIUsage {
+  id          String   @id @default(cuid())
+
+  // User relation
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Request details
+  prompt      String   @db.Text
+  jsonBefore  String?  @db.Text // JSON state before AI modification
+  jsonAfter   String?  @db.Text // JSON generated by AI
+
+  // AI response metadata
+  model       String   @default("gemini-2.5-flash")
+  tokensUsed  Int?
+  responseTime Int?    // in milliseconds
+
+  // Success tracking
+  wasSuccessful Boolean @default(false) // Was valid JSON generated?
+  wasAccepted   Boolean @default(false) // Did user accept the suggestion?
+  errorMessage  String? @db.Text
+
+  // Categorization
+  category    AIRequestCategory @default(MODIFY)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([category])
+  @@index([wasSuccessful])
+  @@index([wasAccepted])
+  @@index([userId, category])
+  @@map("ai_usage")
+}
+
+enum AIRequestCategory {
+  CREATE      // Creating new app from scratch
+  MODIFY      // Modifying existing JSON
+  DATABASE    // Database schema operations
+  AUTH        // Authentication setup
+  COMPONENT   // Adding/modifying components
+  SCREEN      // Adding/modifying screens
+}
+
+// ============================================
+// AI Daily Limits Tracking
+// ============================================
+
+model AIDailyLimit {
+  id          String   @id @default(cuid())
+
+  // User relation
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Daily tracking
+  date        DateTime @default(now()) @db.Date
+  requestCount Int     @default(0)
+  maxRequests  Int     // Based on user's plan tier
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date])
+  @@map("ai_daily_limits")
+}
+
+// ============================================
+// AI Usage in Client Apps
+// ============================================
+
+model AppAIUsage {
+  id          String   @id @default(cuid())
+
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // AI execution details
+  aiAction    String   // "chat", "analyze", "suggest", "classify", "generate"
+  prompt      String   @db.Text
+  result      String   @db.Text
+
+  // Context (formData, etc)
+  context     String?  @db.Text
+
+  // Performance metrics
+  tokensUsed  Int?
+  responseTime Int?    // milliseconds
+
+  // Success tracking
+  wasSuccessful Boolean @default(false)
+  errorMessage  String? @db.Text
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([appId])
+  @@index([userId, appId])
+  @@index([aiAction])
+  @@index([createdAt])
+  @@index([wasSuccessful])
+  @@map("app_ai_usage")
+}
+
+// ============================================
+// AI Execution Limits (Monthly)
+// ============================================
+
+model AIExecutionLimit {
+  id              String   @id @default(cuid())
+
+  // User relation
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Monthly tracking
+  month           DateTime @default(now()) @db.Date
+  executionCount  Int      @default(0)
+  maxExecutions   Int      // Based on user's plan tier
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, month])
+  @@index([userId, month])
+  @@index([month])
+  @@map("ai_execution_limits")
+}
+
+// ============================================
+// System Configuration (Production-ready)
+// ============================================
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?  @db.Text
+  dataType    ConfigDataType @default(STRING) // STRING, NUMBER, JSON, BOOLEAN
+  category    String   // e.g., "trial", "limits", "features", "email"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([key])
+  @@map("system_configs")
+}
+
+enum ConfigDataType {
+  STRING
+  NUMBER
+  JSON
+  BOOLEAN
+}
+
+// ============================================
+// Published App Analytics
+// ============================================
+
+model AppView {
+  id          String   @id @default(cuid())
+
+  // App relation
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Visitor info
+  visitorIp   String?  // IP address (hashed for privacy)
+  userAgent   String?  @db.Text
+  referrer    String?  @db.Text
+
+  // Geo/Device data (optional, can be enriched later)
+  country     String?
+  device      String?  // mobile, desktop, tablet
+
+  // Session tracking
+  sessionId   String?  // For tracking unique sessions
+
+  viewedAt    DateTime @default(now())
+
+  @@index([appId])
+  @@index([appId, viewedAt])
+  @@index([viewedAt])
+  @@index([sessionId])
+  @@map("app_views")
 }

@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { AnalyticsProvider } from '@/contexts/AnalyticsContext'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: 'UI-JSON Visualizer',
@@ -12,8 +15,26 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+        <AnalyticsProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            {children}
+            <Toaster
+              position="top-right"
+              expand={false}
+              richColors
+              closeButton
+              theme="system"
+            />
+          </ThemeProvider>
+        </AnalyticsProvider>
+      </body>
     </html>
   )
 }

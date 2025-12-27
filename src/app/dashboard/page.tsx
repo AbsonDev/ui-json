@@ -15,9 +15,24 @@ import EntityManager from '@/components/EntityManager'
 import DataManager from '@/components/DataManager'
 import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Server } from 'lucide-react'
 import type { EntityResponse } from '@/types'
+import { TemplatesGallery } from '@/components/TemplatesGallery'
+import { OnboardingWizard, useOnboarding } from '@/components/OnboardingWizard'
+import { ExportShareButton } from '@/components/ExportShare'
+import { VersionHistoryButton, useVersionHistory } from '@/components/VersionHistory'
+import { CommandPalette } from '@/components/CommandPalette'
+import { PublishDialog } from '@/components/PublishDialog'
+import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Sparkles, Globe, Eye } from 'lucide-react'
 import { useApps } from '@/hooks/useApps'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
+import { JsonEditor } from '@/components/JsonEditor'
+import { DevicePreview } from '@/components/DevicePreview'
+import { AnimatedIconButton } from '@/components/AnimatedComponents'
+import { SkeletonCard, SkeletonList, SkeletonText } from '@/components/Skeleton'
+import { toast } from 'sonner'
+import { KeyboardShortcutsOverlay } from '@/components/KeyboardShortcuts'
+import { FloatingShapes } from '@/components/GradientBackground'
 
 // --- Context for Design Tokens ---
 export const DesignTokensContext = createContext<Record<string, any>>({})
@@ -107,7 +122,13 @@ export default function DashboardPage() {
   // PostgreSQL integration
   const { apps, loading, error: appsError, createNewApp, updateAppData, deleteAppById } = useApps()
 
+  // Onboarding
+  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding()
+
   const [selectedAppIndex, setSelectedAppIndex] = useState(0)
+
+  // Version History
+  const { saveVersion } = useVersionHistory(currentApp?.id || '', jsonString)
   const [saving, setSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -119,9 +140,13 @@ export default function DashboardPage() {
   const [formState, setFormState] = useState<Record<string, any>>({})
   const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null)
   const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'backend'>('editor')
+  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'templates'>('editor')
   const [dialog, setDialog] = useState<DialogProps['config'] | null>(null)
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
   const [databaseData, setDatabaseData] = useState<Record<string, any>>({})
   const [session, setSession] = useState<{ user: any } | null>(null)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   // Backend (BaaS) state
   const [selectedEntity, setSelectedEntity] = useState<EntityResponse | null>(null)
@@ -174,8 +199,10 @@ export default function DashboardPage() {
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         await updateAppData(currentApp.id, { json: newJson })
+        toast.success('App saved successfully!')
       } catch (err) {
         console.error('Error saving app:', err)
+        toast.error('Failed to save app')
       } finally {
         setSaving(false)
       }
@@ -375,6 +402,9 @@ export default function DashboardPage() {
           const newApp = await createNewApp(newAppName.trim())
           if (newApp) {
             setSelectedAppIndex(apps.length) // Select the newly created app
+            toast.success(`App "${newAppName}" created successfully!`)
+          } else {
+            toast.error('Failed to create app')
           }
         }
       }
@@ -391,6 +421,7 @@ export default function DashboardPage() {
         onConfirm: async (newAppName) => {
             if (newAppName && newAppName.trim() && newAppName.trim() !== currentApp.name) {
                 await updateAppData(currentApp.id, { name: newAppName.trim() })
+                toast.success('App renamed successfully!')
             }
         }
     })
@@ -412,10 +443,12 @@ export default function DashboardPage() {
         title: 'Confirmar Deleção',
         message: `Tem certeza que deseja deletar o aplicativo "${currentApp.name}"?`,
         onConfirm: async () => {
+            const appName = currentApp.name
             await deleteAppById(currentApp.id)
             if (selectedAppIndex >= apps.length - 1) {
                 setSelectedAppIndex(Math.max(0, apps.length - 2))
             }
+            toast.success(`App "${appName}" deleted successfully`)
         }
     })
   }
@@ -484,12 +517,38 @@ export default function DashboardPage() {
     }
 }, [uiApp, currentScreenId, handleSetJsonString])
 
+  const handleImportTemplate = useCallback(async (templateJson: string, templateName: string) => {
+    try {
+      const newApp = await createNewApp(templateName)
+      if (newApp) {
+        await updateAppData(newApp.id, { json: templateJson })
+        setSelectedAppIndex(apps.length)
+        setActiveTab('editor')
+      }
+    } catch (e) {
+      console.error('Error importing template:', e)
+      setDialog({
+        type: 'alert',
+        title: 'Erro ao Importar Template',
+        message: e instanceof Error ? e.message : 'Ocorreu um erro ao importar o template.',
+        onConfirm: () => {},
+      })
+    }
+  }, [createNewApp, updateAppData, apps.length])
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando aplicativos...</p>
+      <div className="flex flex-col h-screen p-4">
+        <div className="bg-white shadow-md p-4 rounded-lg mb-4">
+          <SkeletonText lines={2} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+          <div>
+            <SkeletonCard />
+          </div>
+          <div>
+            <SkeletonCard />
+          </div>
         </div>
       </div>
     )
@@ -516,64 +575,95 @@ export default function DashboardPage() {
       <DatabaseContext.Provider value={{ data: databaseData }}>
         <SessionContext.Provider value={{ session }}>
           <div className="flex flex-col h-screen font-sans">
-            <header className="bg-white shadow-md p-4 z-10 flex justify-between items-center">
+            <header className="bg-white dark:bg-gray-800 shadow-md p-4 z-10 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">UI-JSON Visualizer</h1>
-                <p className="text-gray-600">
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">UI-JSON Visualizer</h1>
+                <p className="text-gray-600 dark:text-gray-400">
                   A live editor for the UI-JSON declarative language.
-                  {saving && <span className="ml-2 text-sm text-blue-600">💾 Salvando...</span>}
+                  {saving && <span className="ml-2 text-sm text-blue-600 dark:text-blue-400">💾 Salvando...</span>}
                 </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                    <label htmlFor="app-select" className="text-sm font-medium text-gray-700">Aplicativo:</label>
+                    <label htmlFor="app-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">Aplicativo:</label>
                     <select
                     id="app-select"
                     value={selectedAppIndex}
                     onChange={handleAppChange}
-                    className="block w-48 px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
+                    aria-label="Selecionar aplicativo"
+                    className="block w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 dark:text-gray-100"
                     >
                     {apps.map((app, index) => (
-                        <option key={app.id} value={index} className="text-gray-900">
-                        {app.name}
+                        <option key={app.id} value={index} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
+                        {app.isPublic ? '🌐 ' : ''}{app.name}{app.isPublic && app.viewCount ? ` (${app.viewCount} views)` : ''}
                         </option>
                     ))}
                     </select>
                 </div>
                 <div className="flex items-center gap-1 border-l pl-3 ml-1">
-                    <button onClick={handleCreateApp} title="Novo Aplicativo" className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <AnimatedIconButton onClick={handleCreateApp} title="Novo Aplicativo" aria-label="Criar novo aplicativo" className="text-gray-600 dark:text-gray-300">
                         <PlusCircle size={20} />
-                    </button>
-                    <button onClick={handleEditAppName} title="Editar Nome" className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </AnimatedIconButton>
+                    <AnimatedIconButton onClick={handleEditAppName} title="Editar Nome" aria-label="Editar nome do aplicativo" className="text-gray-600 dark:text-gray-300">
                         <FilePenLine size={20} />
-                    </button>
-                    <button
+                    </AnimatedIconButton>
+                    <AnimatedIconButton
                         onClick={handleDeleteApp}
                         title="Deletar Aplicativo"
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Deletar aplicativo"
+                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={apps.length <= 1}
                     >
                         <Trash2 size={20} />
-                    </button>
+                    </AnimatedIconButton>
+                </div>
+                <div className="flex items-center gap-2 border-l pl-3 ml-1">
+                    {currentApp && (
+                      <>
+                        <VersionHistoryButton
+                          appId={currentApp.id}
+                          currentJson={jsonString}
+                          onRestore={(json) => handleSetJsonString(json)}
+                        />
+                        <ExportShareButton
+                          appName={currentApp.name}
+                          appJson={jsonString}
+                          appId={currentApp.id}
+                        />
+                        <AnimatedIconButton
+                          onClick={() => setShowPublishDialog(true)}
+                          title={currentApp.isPublic ? "Manage Published App" : "Publish App"}
+                          aria-label={currentApp.isPublic ? "Gerenciar app publicado" : "Publicar app"}
+                          className={currentApp.isPublic
+                            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
+                            : 'text-gray-600 dark:text-gray-300'
+                          }
+                        >
+                          {currentApp.isPublic ? <Eye size={20} /> : <Globe size={20} />}
+                        </AnimatedIconButton>
+                      </>
+                    )}
                 </div>
                 <div className="flex items-center gap-1 border-l pl-3 ml-1">
-                    <Link href="/dashboard/databases" title="Database Connections">
-                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <Link href="/dashboard/databases" title="Database Connections" aria-label="Conexões de banco de dados">
+                        <AnimatedIconButton aria-label="Database Connections" className="text-gray-600 dark:text-gray-300">
                             <Database size={20} />
-                        </button>
+                        </AnimatedIconButton>
                     </Link>
-                    <Link href="/admin" title="Admin Panel">
-                        <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <ThemeSwitcher />
+                    <Link href="/admin" title="Admin Panel" aria-label="Painel administrativo">
+                        <AnimatedIconButton aria-label="Admin Panel" className="text-gray-600 dark:text-gray-300">
                             <Settings size={20} />
-                        </button>
+                        </AnimatedIconButton>
                     </Link>
-                    <button
+                    <AnimatedIconButton
                         onClick={() => signOut()}
                         title="Logout"
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label="Fazer logout"
+                        className="text-gray-600 dark:text-gray-300"
                     >
                         <LogOut size={20} />
-                    </button>
+                    </AnimatedIconButton>
                 </div>
               </div>
             </header>
@@ -587,6 +677,7 @@ export default function DashboardPage() {
                   {activeTab === 'flow' && 'Screen Flow'}
                   {activeTab === 'snippets' && 'Component Library'}
                   {activeTab === 'backend' && (selectedEntity ? selectedEntity.displayName + ' Data' : 'Backend Entities')}
+                  {activeTab === 'templates' && 'Templates Gallery'}
                 </h2>
                 <div className={`flex-1 flex flex-col border rounded-lg shadow-inner ${error && activeTab === 'editor' ? 'border-red-500' : 'border-gray-300'}`}>
                   <div className="flex border-b border-gray-200 bg-white rounded-t-lg">
@@ -596,6 +687,10 @@ export default function DashboardPage() {
                      <button onClick={() => setActiveTab('flow')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'flow' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                       <Workflow size={16} />
                       Fluxo
+                    </button>
+                    <button onClick={() => setActiveTab('templates')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'templates' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                      <Sparkles size={16} />
+                      Templates
                     </button>
                     <button onClick={() => setActiveTab('snippets')} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium ${activeTab === 'snippets' ? 'bg-gray-100 font-semibold text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                       <Library size={16} />
@@ -617,18 +712,18 @@ export default function DashboardPage() {
 
                   <div className="flex-1 flex flex-col overflow-hidden">
                     {activeTab === 'editor' && (
-                      <>
-                        <textarea
+                      <div className="flex-1">
+                        <JsonEditor
                           value={jsonString}
-                          onChange={(e) => handleSetJsonString(e.target.value)}
-                          className="w-full flex-1 p-4 font-mono text-sm bg-gray-50 text-gray-800 resize-none focus:outline-none"
-                          spellCheck="false"
+                          onChange={handleSetJsonString}
                         />
-                        {error && <div className="p-2 bg-red-100 text-red-700 text-xs font-mono rounded-b-lg">{error}</div>}
-                      </>
+                      </div>
                     )}
                      {activeTab === 'snippets' && (
                       <Snippets onAddSnippet={handleAddSnippet} />
+                    )}
+                    {activeTab === 'templates' && (
+                      <TemplatesGallery onImportTemplate={handleImportTemplate} />
                     )}
                     {activeTab === 'ai' && (
                       <AIAssistant jsonString={jsonString} setJsonString={handleSetJsonString} setActiveTab={setActiveTab} />
@@ -667,58 +762,96 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex flex-col h-full">
-                <h2 className="text-lg font-semibold mb-2 text-gray-700">Live Preview</h2>
-                <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-lg overflow-hidden relative">
-                  <DesignTokensContext.Provider value={designTokens}>
-                    <div className="w-[375px] h-[750px] mx-auto my-6 border-[12px] border-black rounded-[40px] shadow-2xl overflow-hidden">
-                      <div
-                        className="h-full overflow-y-auto"
-                        style={{
-                          backgroundColor: resolveToken(currentScreen?.backgroundColor, designTokens) || resolveToken(theme?.backgroundColor, designTokens) || '#FFFFFF',
-                          color: resolveToken(theme?.textColor, designTokens) || '#1F2937'
-                        }}
-                      >
-                        {currentScreenId?.startsWith('auth:') ? (
-                            <AuthScreen type={currentScreenId.split(':')[1] as 'login' | 'signup'} />
-                        ) : currentScreen ? (
-                          <Renderer components={currentScreen.components} screen={currentScreen} theme={theme} />
-                        ) : (
-                          <div className="p-8 text-center text-gray-500">
-                            <p>Waiting for valid JSON to render a screen...</p>
-                          </div>
-                        )}
-                      </div>
+                <h2 className="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-300">Live Preview</h2>
+                <DesignTokensContext.Provider value={designTokens}>
+                  <DevicePreview
+                    backgroundColor={
+                      resolveToken(currentScreen?.backgroundColor, designTokens) ||
+                      resolveToken(theme?.backgroundColor, designTokens) ||
+                      '#FFFFFF'
+                    }
+                  >
+                    <div
+                      className="h-full overflow-y-auto"
+                      style={{
+                        color: resolveToken(theme?.textColor, designTokens) || '#1F2937'
+                      }}
+                    >
+                      {currentScreenId?.startsWith('auth:') ? (
+                        <AuthScreen type={currentScreenId.split(':')[1] as 'login' | 'signup'} />
+                      ) : currentScreen ? (
+                        <Renderer components={currentScreen.components} screen={currentScreen} theme={theme} />
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          <p>Waiting for valid JSON to render a screen...</p>
+                        </div>
+                      )}
                     </div>
-                  </DesignTokensContext.Provider>
-                  {popup && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-                              {popup.title && <h3 className="text-lg font-bold mb-2 text-gray-900">{popup.title}</h3>}
-                              <p className="text-gray-700 mb-4">{popup.message}</p>
-                              <div className="flex justify-end space-x-2">
-                                  {popup.buttons ? popup.buttons.map((btn: any, index: number) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => {
-                                          if(btn.action) handleAction(btn.action)
-                                          setPopup(null)
-                                        }}
-                                        className={`px-4 py-2 rounded-md text-sm font-semibold ${btn.variant === 'primary' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                                        {btn.text}
-                                    </button>
-                                  )) :
-                                    <button onClick={() => setPopup(null)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold">
-                                      OK
-                                    </button>
-                                  }
-                              </div>
+                    {popup && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full">
+                          {popup.title && <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100">{popup.title}</h3>}
+                          <p className="text-gray-700 dark:text-gray-300 mb-4">{popup.message}</p>
+                          <div className="flex justify-end space-x-2">
+                            {popup.buttons ? popup.buttons.map((btn: any, index: number) => (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  if(btn.action) handleAction(btn.action)
+                                  setPopup(null)
+                                }}
+                                className={`px-4 py-2 rounded-md text-sm font-semibold ${btn.variant === 'primary' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+                              >
+                                {btn.text}
+                              </button>
+                            )) : (
+                              <button onClick={() => setPopup(null)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold">
+                                OK
+                              </button>
+                            )}
                           </div>
+                        </div>
                       </div>
-                  )}
-                </div>
+                    )}
+                  </DevicePreview>
+                </DesignTokensContext.Provider>
               </div>
             </main>
             {dialog && <CustomDialog config={dialog} onClose={() => setDialog(null)} />}
+            {showPublishDialog && currentApp && (
+              <PublishDialog
+                app={{
+                  id: currentApp.id,
+                  name: currentApp.name,
+                  isPublic: currentApp.isPublic,
+                  publishedSlug: currentApp.publishedSlug || null,
+                }}
+                onClose={() => setShowPublishDialog(false)}
+                onPublished={() => {
+                  // Refresh apps list
+                  refetch()
+                  setShowPublishDialog(false)
+                }}
+              />
+            )}
+            <CommandPalette
+              onCreateApp={handleCreateApp}
+              onOpenTemplates={() => setActiveTab('templates')}
+              onOpenAI={() => setActiveTab('ai')}
+              onOpenDatabase={() => setActiveTab('database')}
+              onOpenFlow={() => setActiveTab('flow')}
+              onOpenSnippets={() => setActiveTab('snippets')}
+              onExport={() => setShowExportDialog(true)}
+              onVersionHistory={() => setShowVersionHistory(true)}
+              onOpenSettings={() => window.location.href = '/admin'}
+            />
+            {showOnboarding && (
+              <OnboardingWizard
+                onComplete={completeOnboarding}
+                onSkip={skipOnboarding}
+              />
+            )}
+            <KeyboardShortcutsOverlay />
           </div>
         </SessionContext.Provider>
       </DatabaseContext.Provider>

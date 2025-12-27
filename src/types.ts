@@ -136,6 +136,36 @@ export interface UITimePicker extends UIComponentBase {
   disabled?: boolean;
 }
 
+// AI Components
+export interface UIAIChat extends UIComponentBase {
+  type: 'aichat';
+  persona?: string; // AI personality/instructions
+  welcomeMessage?: string;
+  placeholder?: string;
+  height?: number | string;
+  showHistory?: boolean;
+  maxMessages?: number;
+}
+
+export interface UIAIAssistant extends UIComponentBase {
+  type: 'aiassistant';
+  prompt: string; // The prompt template (can use {{field}} syntax)
+  inputFields: string[]; // Form field IDs to use as input
+  outputField: string; // Form field ID to save the result
+  buttonText?: string;
+  loadingText?: string;
+  icon?: string;
+}
+
+export interface UIAIAnalyzer extends UIComponentBase {
+  type: 'aianalyzer';
+  analyzeType: 'text' | 'sentiment' | 'category' | 'summary';
+  sourceField: string; // Field to analyze
+  resultField: string; // Where to save result
+  placeholder?: string;
+  autoAnalyze?: boolean; // Analyze on blur/change
+}
+
 
 export type UIComponent =
   | UIText
@@ -149,7 +179,10 @@ export type UIComponent =
   | UIContainer
   | UIDivider
   | UIDatePicker
-  | UITimePicker;
+  | UITimePicker
+  | UIAIChat
+  | UIAIAssistant
+  | UIAIAnalyzer;
 
 // Actions
 export interface NavigateAction {
@@ -229,6 +262,18 @@ export interface LogoutAction {
   onSuccess?: UIAction;
 }
 
+// AI Action
+export interface AIAction {
+  type: 'ai';
+  aiAction: 'chat' | 'analyze' | 'suggest' | 'classify' | 'generate';
+  prompt: string; // Can use {{fieldId}} template syntax
+  context?: Record<string, string>; // Additional context fields
+  saveToField?: string; // Field ID to save the result
+  persona?: string; // AI personality/instructions
+  onSuccess?: UIAction;
+  onError?: UIAction;
+}
+
 
 export type UIAction =
   | NavigateAction
@@ -240,7 +285,8 @@ export type UIAction =
   | DeleteRecordAction
   | LoginAction
   | SignupAction
-  | LogoutAction;
+  | LogoutAction
+  | AIAction;
 
 // Screen and App structure
 export interface UIScreen {

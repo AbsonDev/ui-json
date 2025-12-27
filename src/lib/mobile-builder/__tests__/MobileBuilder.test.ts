@@ -2,18 +2,22 @@
  * @jest-environment node
  */
 
-import { MobileBuilder } from '@/lib/mobile-builder/MobileBuilder';
-import type { BuildRequest, ProjectConfig } from '@/lib/mobile-builder/types';
-import fs from 'fs/promises';
-import path from 'path';
-import { exec } from 'child_process';
-
-// Mock file system operations
+// Mock modules BEFORE importing anything else
 jest.mock('fs/promises');
 jest.mock('child_process');
 
-const mockedFs = fs as jest.Mocked<typeof fs>;
-const mockedExec = exec as jest.MockedFunction<typeof exec>;
+import { MobileBuilder } from '@/lib/mobile-builder/MobileBuilder';
+import type { BuildRequest, ProjectConfig } from '@/lib/mobile-builder/types';
+import fs from 'fs/promises';
+import { exec } from 'child_process';
+
+const mockMkdir = jest.mocked(fs.mkdir);
+const mockWriteFile = jest.mocked(fs.writeFile);
+const mockCopyFile = jest.mocked(fs.copyFile);
+const mockReadFile = jest.mocked(fs.readFile);
+const mockRm = jest.mocked(fs.rm);
+const mockAccess = jest.mocked(fs.access);
+const mockExec = jest.mocked(exec);
 
 describe('MobileBuilder', () => {
   let mobileBuilder: MobileBuilder;
@@ -45,22 +49,22 @@ describe('MobileBuilder', () => {
 
   describe('initialize', () => {
     it('should create necessary directories', async () => {
-      mockedFs.mkdir.mockResolvedValue(undefined);
+      mockMkdir.mockResolvedValue(undefined);
 
       await mobileBuilder.initialize();
 
-      expect(mockedFs.mkdir).toHaveBeenCalledWith(
+      expect(mockMkdir).toHaveBeenCalledWith(
         expect.stringContaining('builds'),
         { recursive: true }
       );
-      expect(mockedFs.mkdir).toHaveBeenCalledWith(
+      expect(mockMkdir).toHaveBeenCalledWith(
         expect.stringContaining('templates/mobile'),
         { recursive: true }
       );
     });
 
     it('should handle errors when creating directories', async () => {
-      mockedFs.mkdir.mockRejectedValue(new Error('Permission denied'));
+      mockMkdir.mockRejectedValue(new Error('Permission denied'));
 
       await expect(mobileBuilder.initialize()).rejects.toThrow('Permission denied');
     });
@@ -138,13 +142,13 @@ describe('MobileBuilder', () => {
   describe('buildProject', () => {
     beforeEach(() => {
       // Mock file system operations
-      mockedFs.mkdir.mockResolvedValue(undefined);
-      mockedFs.writeFile.mockResolvedValue(undefined);
-      mockedFs.copyFile.mockResolvedValue(undefined);
+      mockMkdir.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
+      mockCopyFile.mockResolvedValue(undefined);
     });
 
     it('should create build result with pending status initially', async () => {
-      mockedExec.mockImplementation((cmd, opts, callback) => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
         if (callback) callback(null, '', '');
         return {} as any;
       });
@@ -159,7 +163,7 @@ describe('MobileBuilder', () => {
     });
 
     it('should handle Android debug build', async () => {
-      mockedExec.mockImplementation((cmd, opts, callback) => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
         if (callback) callback(null, 'Build successful', '');
         return {} as any;
       });
@@ -175,7 +179,7 @@ describe('MobileBuilder', () => {
     });
 
     it('should handle build errors', async () => {
-      mockedExec.mockImplementation((cmd, opts, callback) => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
         if (callback) callback(new Error('Build failed'), '', 'Error output');
         return {} as any;
       });
@@ -187,7 +191,7 @@ describe('MobileBuilder', () => {
     });
 
     it('should set completed timestamp on success', async () => {
-      mockedExec.mockImplementation((cmd, opts, callback) => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
         if (callback) callback(null, 'Success', '');
         return {} as any;
       });
@@ -205,22 +209,22 @@ describe('MobileBuilder', () => {
 
   describe('createCapacitorProject', () => {
     it('should create capacitor.config.json', async () => {
-      mockedFs.writeFile.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
 
       await (mobileBuilder as any).createCapacitorProject('/test/path', mockProjectConfig);
 
-      expect(mockedFs.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         expect.stringContaining('capacitor.config.json'),
         expect.stringContaining(mockProjectConfig.bundleId)
       );
     });
 
     it('should create package.json with correct dependencies', async () => {
-      mockedFs.writeFile.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
 
       await (mobileBuilder as any).createCapacitorProject('/test/path', mockProjectConfig);
 
-      const packageJsonCall = (mockedFs.writeFile as jest.Mock).mock.calls.find(
+      const packageJsonCall = (mockWriteFile as jest.Mock).mock.calls.find(
         call => call[0].includes('package.json')
       );
 
@@ -232,11 +236,11 @@ describe('MobileBuilder', () => {
     });
 
     it('should use correct app name and bundle ID', async () => {
-      mockedFs.writeFile.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
 
       await (mobileBuilder as any).createCapacitorProject('/test/path', mockProjectConfig);
 
-      const configCall = (mockedFs.writeFile as jest.Mock).mock.calls.find(
+      const configCall = (mockWriteFile as jest.Mock).mock.calls.find(
         call => call[0].includes('capacitor.config.json')
       );
 
@@ -249,14 +253,14 @@ describe('MobileBuilder', () => {
   describe('Platform-specific builds', () => {
     describe('buildAndroid', () => {
       it('should call gradlew bundleDebug for debug builds', async () => {
-        mockedExec.mockImplementation((cmd, opts, callback) => {
+        mockExec.mockImplementation((cmd, opts, callback) => {
           if (callback) callback(null, 'Success', '');
           return {} as any;
         });
 
         await (mobileBuilder as any).buildAndroid('/test/path', 'debug');
 
-        expect(mockedExec).toHaveBeenCalledWith(
+        expect(mockExec).toHaveBeenCalledWith(
           expect.stringContaining('bundleDebug'),
           expect.any(Object),
           expect.any(Function)
@@ -264,14 +268,14 @@ describe('MobileBuilder', () => {
       });
 
       it('should call gradlew bundleRelease for release builds', async () => {
-        mockedExec.mockImplementation((cmd, opts, callback) => {
+        mockExec.mockImplementation((cmd, opts, callback) => {
           if (callback) callback(null, 'Success', '');
           return {} as any;
         });
 
         await (mobileBuilder as any).buildAndroid('/test/path', 'release');
 
-        expect(mockedExec).toHaveBeenCalledWith(
+        expect(mockExec).toHaveBeenCalledWith(
           expect.stringContaining('bundleRelease'),
           expect.any(Object),
           expect.any(Function)
@@ -286,15 +290,15 @@ describe('MobileBuilder', () => {
           keyPassword: 'keypass',
         };
 
-        mockedFs.writeFile.mockResolvedValue(undefined);
-        mockedExec.mockImplementation((cmd, opts, callback) => {
+        mockWriteFile.mockResolvedValue(undefined);
+        mockExec.mockImplementation((cmd, opts, callback) => {
           if (callback) callback(null, 'Success', '');
           return {} as any;
         });
 
         await (mobileBuilder as any).buildAndroid('/test/path', 'release', signing);
 
-        expect(mockedFs.writeFile).toHaveBeenCalledWith(
+        expect(mockWriteFile).toHaveBeenCalledWith(
           expect.stringContaining('gradle.properties'),
           expect.stringContaining('RELEASE_STORE_FILE')
         );
@@ -312,32 +316,32 @@ describe('MobileBuilder', () => {
 
   describe('generateProjectFiles', () => {
     it('should create www directory', async () => {
-      mockedFs.mkdir.mockResolvedValue(undefined);
-      mockedFs.writeFile.mockResolvedValue(undefined);
+      mockMkdir.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
 
       await (mobileBuilder as any).generateProjectFiles(mockProjectConfig, '/test/path');
 
-      expect(mockedFs.mkdir).toHaveBeenCalledWith(
+      expect(mockMkdir).toHaveBeenCalledWith(
         expect.stringContaining('www'),
         { recursive: true }
       );
     });
 
     it('should write HTML, CSS, and JS files', async () => {
-      mockedFs.mkdir.mockResolvedValue(undefined);
-      mockedFs.writeFile.mockResolvedValue(undefined);
+      mockMkdir.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
 
       await (mobileBuilder as any).generateProjectFiles(mockProjectConfig, '/test/path');
 
-      expect(mockedFs.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         expect.stringContaining('index.html'),
         expect.any(String)
       );
-      expect(mockedFs.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         expect.stringContaining('styles.css'),
         expect.any(String)
       );
-      expect(mockedFs.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         expect.stringContaining('app.js'),
         expect.any(String)
       );

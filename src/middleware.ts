@@ -1,7 +1,5 @@
 import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { loginRateLimiter, getClientIdentifier, createRateLimitResponse } from '@/lib/rate-limit'
 
 export default auth((req) => {
   const { nextUrl } = req
@@ -16,18 +14,8 @@ export default auth((req) => {
 
   const isAdminPage = nextUrl.pathname.startsWith('/admin')
 
-  const isLoginEndpoint = nextUrl.pathname === '/api/auth/callback/credentials' &&
-                          req.method === 'POST'
-
-  // Rate limiting for login attempts
-  if (isLoginEndpoint) {
-    const identifier = getClientIdentifier(req as any)
-    const rateLimitResult = loginRateLimiter.check(identifier)
-
-    if (!rateLimitResult.success) {
-      return createRateLimitResponse(rateLimitResult.resetAt)
-    }
-  }
+  // NOTE: Rate limiting is now handled in API routes (src/app/api/auth/[...nextauth]/route.ts)
+  // This allows us to use async/await which is required for production rate limiting with Upstash
 
   // Protect admin routes - require both login and admin status
   if (isAdminPage) {

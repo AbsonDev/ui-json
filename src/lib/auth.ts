@@ -30,8 +30,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           const { email, password } = loginSchema.parse(credentials)
 
-          // NOTE: Rate limiting for login is handled in middleware
-          // See src/middleware.ts for IP-based rate limiting
+          // NOTE: Rate limiting for login is handled in API routes
+          // See src/lib/rate-limit.ts for production-ready rate limiting with Upstash
 
           const user = await prisma.user.findUnique({
             where: { email },

@@ -11,32 +11,31 @@ import { AuthScreen } from './components/AuthScreen';
 import { FlowBuilder } from './components/FlowBuilder';
 import { Snippets } from './components/Snippets';
 import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, Undo, Redo } from 'lucide-react';
-import { useHistory } from './hooks/useHistory';
 
-// --- Local Storage Keys ---
-const APPS_STORAGE_KEY = 'ui-json-visualizer-apps';
-const DB_DATA_STORAGE_KEY = 'ui-json-visualizer-databaseData';
+// Import new hooks
+import { useEditorState } from './hooks/useEditorState';
+import { useScreenNavigation } from './hooks/useScreenNavigation';
+import { useFormState } from './hooks/useFormState';
+import { useDialogState, DialogConfig } from './hooks/useDialogState';
+import { useDatabaseState } from './hooks/useDatabaseState';
+import { useAppsState } from './hooks/useAppsState';
+import { useSessionState } from './hooks/useSessionState';
+
+// Import action dispatcher
+import { dispatchAction } from './lib/actions/action-dispatcher';
+
+// Import utilities
+import { resolveToken } from './lib/utils/design-tokens';
+import { parseJsonSafe } from './lib/utils/json-validation';
 
 // --- Context for Design Tokens ---
 export const DesignTokensContext = createContext<Record<string, any>>({});
-const resolveToken = (value: any, tokens: Record<string, any>): any => {
-    if (typeof value === 'string' && value.startsWith('$')) {
-        const tokenName = value.substring(1);
-        return tokens[tokenName] || value;
-    }
-    return value;
-};
 
 
 // --- Custom Dialog Component ---
+
 interface DialogProps {
-  config: {
-    type: 'prompt' | 'confirm' | 'alert';
-    title: string;
-    message: string;
-    defaultValue?: string;
-    onConfirm: (value?: string) => void;
-  };
+  config: DialogConfig;
   onClose: () => void;
 }
 
@@ -104,87 +103,46 @@ const CustomDialog: React.FC<DialogProps> = ({ config, onClose }) => {
 
 
 const App: React.FC = () => {
-  const { 
-    state: apps, 
-    setState: setApps, 
-    undo, 
-    redo, 
-    canUndo, 
-    canRedo 
-  } = useHistory(() => {
-    const savedApps = localStorage.getItem(APPS_STORAGE_KEY);
-    if (savedApps) {
-      try {
-        return JSON.parse(savedApps);
-      } catch (e) {
-        console.error("Failed to parse saved apps from localStorage", e);
-        return sampleApps; // Fallback
-      }
-    }
-    return sampleApps;
-  });
+  // ===== STATE MANAGEMENT WITH CUSTOM HOOKS =====
+  const { apps, setApps, undo, redo, canUndo, canRedo } = useAppsState(sampleApps);
+  const { selectedAppIndex, setSelectedAppIndex, activeTab, setActiveTab, error, setError } = useEditorState();
+  const { currentScreenId, setCurrentScreenId } = useScreenNavigation();
+  const { formState, setFormState } = useFormState();
+  const { dialog, setDialog, popup, setPopup, showAlert, showConfirm, showPrompt } = useDialogState();
+  const { getAppData, setAppData } = useDatabaseState();
+  const { session, setSession } = useSessionState();
 
-  const [selectedAppIndex, setSelectedAppIndex] = useState(0);
-
+  // ===== DERIVED STATE =====
   const jsonString = useMemo(() => apps[selectedAppIndex]?.json || '', [apps, selectedAppIndex]);
-  
-  const [error, setError] = useState<string | null>(null);
-  const [currentScreenId, setCurrentScreenId] = useState<string | null>(null);
-  const [formState, setFormState] = useState<Record<string, any>>({});
-  const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null);
-  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets'>('editor');
-  const [dialog, setDialog] = useState<DialogProps['config'] | null>(null);
-  const [databaseData, setDatabaseData] = useState<Record<number, Record<string, any[]>>>(() => {
-    const savedData = localStorage.getItem(DB_DATA_STORAGE_KEY);
-     if (savedData) {
-        try {
-            return JSON.parse(savedData);
-        } catch (e) {
-            console.error("Failed to parse saved database data from localStorage", e);
-            return {}; // Fallback
-        }
-    }
-    return {};
-  });
-  const [session, setSession] = useState<{ user: any } | null>(null);
+  const currentDbData = useMemo(() => getAppData(selectedAppIndex), [getAppData, selectedAppIndex]);
+  const setCurrentDbData = useCallback(
+    (data: Record<string, any[]>) => setAppData(selectedAppIndex, data),
+    [selectedAppIndex, setAppData]
+  );
 
-  // Effect to save apps to localStorage
-  useEffect(() => {
-    localStorage.setItem(APPS_STORAGE_KEY, JSON.stringify(apps));
-  }, [apps]);
-
-  // Effect to save database data to localStorage
-  useEffect(() => {
-    localStorage.setItem(DB_DATA_STORAGE_KEY, JSON.stringify(databaseData));
-  }, [databaseData]);
-
+  // ===== PARSE UI APP =====
   const uiApp: UIApp | null = useMemo(() => {
-    try {
-      if (!jsonString) return null;
-      const parsed = JSON.parse(jsonString);
-      setError(null);
-      if (!currentScreenId || !parsed.screens[currentScreenId] && !currentScreenId.startsWith('auth:')) {
-        setCurrentScreenId(parsed.initialScreen);
-      }
-      return parsed;
-    } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('An unknown error occurred while parsing JSON.');
-      }
+    if (!jsonString) return null;
+
+    const parsed = parseJsonSafe<UIApp>(jsonString);
+
+    if (!parsed) {
+      setError('Invalid JSON');
       return null;
     }
-  }, [jsonString, currentScreenId]);
+
+    setError(null);
+
+    // Auto-navigate to initial screen if needed
+    if (!currentScreenId || (!parsed.screens[currentScreenId] && !currentScreenId.startsWith('auth:'))) {
+      setCurrentScreenId(parsed.initialScreen);
+    }
+
+    return parsed;
+  }, [jsonString, currentScreenId, setCurrentScreenId, setError]);
 
   const authConfig = uiApp?.app.authentication;
   const designTokens = uiApp?.app.designTokens || {};
-
-  const currentDbData = useMemo(() => databaseData[selectedAppIndex] || {}, [databaseData, selectedAppIndex]);
-  
-  const setCurrentDbData = useCallback((data: Record<string, any[]>) => {
-      setDatabaseData(prev => ({...prev, [selectedAppIndex]: data}));
-  }, [selectedAppIndex]);
 
   // Effect to synchronize the database data structure with the schema
   useEffect(() => {
@@ -229,6 +187,7 @@ const App: React.FC = () => {
   }, [selectedAppIndex, uiApp, apps]);
 
 
+  // ===== JSON EDITOR =====
   const handleSetJsonString = useCallback((newJson: string) => {
     setApps(currentApps => {
       const newApps = [...currentApps];
@@ -237,118 +196,23 @@ const App: React.FC = () => {
     });
   }, [selectedAppIndex, setApps]);
 
+  // ===== ACTION HANDLER WITH DISPATCHER =====
   const handleAction = useCallback((action: UIAction) => {
     if (!action) return;
 
-    switch (action.type) {
-      case 'navigate':
-        setCurrentScreenId(action.target);
-        break;
-      case 'popup':
-        setPopup({ title: action.title, message: action.message, variant: action.variant || 'alert', buttons: action.buttons });
-        break;
-      case 'goBack':
-        if (uiApp?.initialScreen) setCurrentScreenId(uiApp.initialScreen);
-        break;
-      case 'submit':
-         if (action.target === 'database' && action.table && action.fields) {
-            const table = action.table;
-            const newRecord: Record<string, any> = { id: Date.now().toString() };
-            
-            for (const dbField in action.fields) {
-                const formFieldId = action.fields[dbField];
-                newRecord[dbField] = formState[formFieldId];
-            }
-
-            setCurrentDbData({
-                ...currentDbData,
-                [table]: [...(currentDbData[table] || []), newRecord]
-            });
-
-            const newFormState = {...formState};
-            for (const dbField in action.fields) {
-                const formFieldId = action.fields[dbField];
-                newFormState[formFieldId] = '';
-            }
-            setFormState(newFormState);
-            if(action.onSuccess) handleAction(action.onSuccess);
-
-        } else { // Mock API call
-            const body: Record<string, any> = {};
-            action.fields && Object.values(action.fields).forEach(fieldId => {
-              body[fieldId] = formState[fieldId];
-            });
-            console.log('Submitting to:', action.endpoint, 'with data:', body);
-            setTimeout(() => {
-              const success = Math.random() > 0.2; // 80% success rate
-              if (success && action.onSuccess) {
-                handleAction(action.onSuccess);
-              } else if (!success && action.onError) {
-                handleAction(action.onError);
-              }
-            }, 1000);
-        }
-        break;
-      case 'deleteRecord':
-        setCurrentDbData({
-            ...currentDbData,
-            [action.table]: (currentDbData[action.table] || []).filter(r => r.id !== action.recordId)
-        });
-        break;
-      
-      case 'auth:login': {
-        if (!authConfig) return;
-        const email = formState[action.fields.email];
-        const password = formState[action.fields.password];
-        const userTable = currentDbData[authConfig.userTable] || [];
-        const user = userTable.find(u => u[authConfig.emailField] === email && u[authConfig.passwordField] === password);
-        
-        if (user) {
-          setSession({ user });
-          setCurrentScreenId(authConfig.postLoginScreen);
-          setFormState({});
-        } else if (action.onError) {
-          handleAction(action.onError);
-        }
-        break;
-      }
-      case 'auth:signup': {
-        if (!authConfig) return;
-        const email = formState[action.fields.email];
-        const userTable = currentDbData[authConfig.userTable] || [];
-        const userExists = userTable.some(u => u[authConfig.emailField] === email);
-        
-        if (userExists) {
-            if (action.onError) handleAction(action.onError);
-            return;
-        }
-
-        const newUser: Record<string, any> = { id: Date.now().toString() };
-        for (const field in action.fields) {
-            const formFieldId = action.fields[field];
-            newUser[field] = formState[formFieldId];
-        }
-
-        setCurrentDbData({
-            ...currentDbData,
-            [authConfig.userTable]: [...userTable, newUser]
-        });
-        setSession({ user: newUser });
-        setCurrentScreenId(authConfig.postLoginScreen);
-        setFormState({});
-        break;
-      }
-      case 'auth:logout': {
-        setSession(null);
-        if (action.onSuccess) handleAction(action.onSuccess);
-        else setCurrentScreenId(uiApp?.initialScreen || null);
-        break;
-      }
-      
-      default:
-        console.warn('Unknown action type:', (action as any).type);
-    }
-  }, [uiApp, formState, currentDbData, setCurrentDbData, authConfig]);
+    dispatchAction(action, {
+      handleAction,
+      formState,
+      setFormState,
+      currentDbData,
+      setCurrentDbData,
+      session,
+      setSession,
+      uiApp,
+      setCurrentScreenId,
+      setPopup,
+    });
+  }, [formState, setFormState, currentDbData, setCurrentDbData, session, setSession, uiApp, setCurrentScreenId, setPopup]);
 
   const currentScreen: UIScreen | undefined = useMemo(() => {
     if (!uiApp || !currentScreenId || currentScreenId.startsWith('auth:')) return undefined;
@@ -364,21 +228,21 @@ const App: React.FC = () => {
   }, [uiApp, currentScreenId, session, authConfig]);
 
   const theme = uiApp?.app?.theme;
-  
-  const handleAppChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+
+  // ===== APP MANAGEMENT HANDLERS =====
+  const handleAppChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const newIndex = Number(e.target.value);
     setSelectedAppIndex(newIndex);
     setCurrentScreenId(null);
     setFormState({});
     setSession(null);
-  };
+  }, [setSelectedAppIndex, setCurrentScreenId, setFormState, setSession]);
 
-  const handleCreateApp = () => {
-    setDialog({
-      type: 'prompt',
-      title: 'Novo Aplicativo',
-      message: 'Digite o nome do novo aplicativo:',
-      onConfirm: (newAppName) => {
+  const handleCreateApp = useCallback(() => {
+    showPrompt(
+      'Novo Aplicativo',
+      'Digite o nome do novo aplicativo:',
+      (newAppName) => {
         if (newAppName && newAppName.trim()) {
           const newApp = {
             name: newAppName.trim(),
@@ -389,117 +253,111 @@ const App: React.FC = () => {
           setSelectedAppIndex(newApps.length - 1);
         }
       }
-    });
-  };
+    );
+  }, [apps, setApps, setSelectedAppIndex, showPrompt]);
 
-  const handleEditAppName = () => {
+  const handleEditAppName = useCallback(() => {
     const currentApp = apps[selectedAppIndex];
     if (!currentApp) return;
-    setDialog({
-        type: 'prompt',
-        title: 'Editar Nome do Aplicativo',
-        message: 'Digite o novo nome para o aplicativo:',
-        defaultValue: currentApp.name,
-        onConfirm: (newAppName) => {
-            if (newAppName && newAppName.trim() && newAppName.trim() !== currentApp.name) {
-                setApps(currentApps => {
-                    const newApps = [...currentApps];
-                    newApps[selectedAppIndex] = { ...newApps[selectedAppIndex], name: newAppName.trim() };
-                    return newApps;
-                });
-            }
-        }
-    });
-  };
 
-  const handleDeleteApp = () => {
+    showPrompt(
+      'Editar Nome do Aplicativo',
+      'Digite o novo nome para o aplicativo:',
+      (newAppName) => {
+        if (newAppName && newAppName.trim() && newAppName.trim() !== currentApp.name) {
+          setApps(currentApps => {
+            const newApps = [...currentApps];
+            newApps[selectedAppIndex] = { ...newApps[selectedAppIndex], name: newAppName.trim() };
+            return newApps;
+          });
+        }
+      },
+      currentApp.name
+    );
+  }, [apps, selectedAppIndex, setApps, showPrompt]);
+
+  const handleDeleteApp = useCallback(() => {
     if (apps.length <= 1) {
-      setDialog({
-          type: 'alert',
-          title: 'Ação Inválida',
-          message: 'Não é possível deletar o último aplicativo.',
-          onConfirm: () => {},
-      });
+      showAlert(
+        'Ação Inválida',
+        'Não é possível deletar o último aplicativo.'
+      );
       return;
     }
+
     const currentApp = apps[selectedAppIndex];
-    setDialog({
-        type: 'confirm',
-        title: 'Confirmar Deleção',
-        message: `Tem certeza que deseja deletar o aplicativo "${currentApp.name}"?`,
-        onConfirm: () => {
-            const newApps = apps.filter((_, index) => index !== selectedAppIndex);
-            setApps(newApps);
-            if (selectedAppIndex >= newApps.length) {
-                setSelectedAppIndex(newApps.length - 1);
-            }
+    showConfirm(
+      'Confirmar Deleção',
+      `Tem certeza que deseja deletar o aplicativo "${currentApp.name}"?`,
+      () => {
+        const newApps = apps.filter((_, index) => index !== selectedAppIndex);
+        setApps(newApps);
+        if (selectedAppIndex >= newApps.length) {
+          setSelectedAppIndex(newApps.length - 1);
         }
-    });
-  };
+      }
+    );
+  }, [apps, selectedAppIndex, setApps, setSelectedAppIndex, showAlert, showConfirm]);
 
-  const handleSchemaChange = (newSchema: any) => {
+  // ===== SCHEMA MANAGEMENT =====
+  const handleSchemaChange = useCallback((newSchema: any) => {
     if (uiApp) {
-        const newApp = {...uiApp, app: {...uiApp.app, databaseSchema: newSchema}};
-        handleSetJsonString(JSON.stringify(newApp, null, 2));
+      const newApp = { ...uiApp, app: { ...uiApp.app, databaseSchema: newSchema } };
+      handleSetJsonString(JSON.stringify(newApp, null, 2));
     }
-  }
+  }, [uiApp, handleSetJsonString]);
 
+  // ===== SNIPPET MANAGEMENT =====
   const handleAddSnippet = useCallback((snippetJson: string) => {
     try {
-        if (!uiApp) {
-            throw new Error("O JSON do aplicativo atual é inválido.");
-        }
+      if (!uiApp) {
+        throw new Error("O JSON do aplicativo atual é inválido.");
+      }
 
-        let snippetComponents;
-        try {
-            snippetComponents = JSON.parse(snippetJson);
-        } catch (e) {
-            throw new Error("O JSON do componente selecionado é inválido.");
-        }
+      const snippetComponents = parseJsonSafe<UIComponent | UIComponent[]>(snippetJson);
+      if (!snippetComponents) {
+        throw new Error("O JSON do componente selecionado é inválido.");
+      }
 
-        if (!Array.isArray(snippetComponents)) {
-            snippetComponents = [snippetComponents];
-        }
+      const componentsArray = Array.isArray(snippetComponents) ? snippetComponents : [snippetComponents];
 
-        const targetScreenId = currentScreenId || uiApp.initialScreen;
-        if (!targetScreenId || !uiApp.screens[targetScreenId]) {
-            throw new Error("Não foi possível encontrar uma tela para adicionar o componente.");
-        }
+      const targetScreenId = currentScreenId || uiApp.initialScreen;
+      if (!targetScreenId || !uiApp.screens[targetScreenId]) {
+        throw new Error("Não foi possível encontrar uma tela para adicionar o componente.");
+      }
 
-        const timestamp = Date.now();
-        const makeIdsUnique = (components: UIComponent[]): UIComponent[] => {
-            return components.map((comp, index) => {
-                const newId = `${comp.id}_${timestamp}_${index}`;
-                
-                if ('components' in comp && Array.isArray(comp.components)) {
-                    return {
-                        ...comp,
-                        id: newId,
-                        components: makeIdsUnique(comp.components),
-                    };
-                }
-                
-                return { ...comp, id: newId };
-            });
-        };
-        const uniqueSnippetComponents: UIComponent[] = makeIdsUnique(snippetComponents);
-        
-        const newApp = JSON.parse(JSON.stringify(uiApp));
-        newApp.screens[targetScreenId].components.push(...uniqueSnippetComponents);
+      const timestamp = Date.now();
+      const makeIdsUnique = (components: UIComponent[]): UIComponent[] => {
+        return components.map((comp, index) => {
+          const newId = `${comp.id}_${timestamp}_${index}`;
 
-        handleSetJsonString(JSON.stringify(newApp, null, 2));
-        setActiveTab('editor');
+          if ('components' in comp && Array.isArray(comp.components)) {
+            return {
+              ...comp,
+              id: newId,
+              components: makeIdsUnique(comp.components),
+            };
+          }
+
+          return { ...comp, id: newId };
+        });
+      };
+
+      const uniqueSnippetComponents = makeIdsUnique(componentsArray);
+      const newApp = JSON.parse(JSON.stringify(uiApp));
+      newApp.screens[targetScreenId].components.push(...uniqueSnippetComponents);
+
+      handleSetJsonString(JSON.stringify(newApp, null, 2));
+      setActiveTab('editor');
 
     } catch (e) {
-        console.error("Error adding snippet:", e);
-        setDialog({
-            type: 'alert',
-            title: 'Erro ao Adicionar Componente',
-            message: e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.',
-            onConfirm: () => {},
-        });
+      console.error("Error adding snippet:", e);
+      showAlert(
+        'Erro ao Adicionar Componente',
+        e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.'
+      );
     }
-}, [uiApp, currentScreenId, handleSetJsonString]);
+  }, [uiApp, currentScreenId, handleSetJsonString, setActiveTab, showAlert]);
 
 
   return (

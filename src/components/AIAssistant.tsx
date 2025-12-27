@@ -1,65 +1,12 @@
-import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import { Wand2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Wand2, AlertCircle, Info, Lightbulb } from 'lucide-react';
+import { getPromptSuggestions, getContextualTips } from '@/lib/ai/promptSuggestions';
 
-const SYSTEM_INSTRUCTION = `Você é um especialista em gerar e modificar UI-JSON, uma linguagem declarativa para criar interfaces e esquemas de dados de aplicativos.
-
-ESTRUTURA COMPLETA:
-{
-  "version": "1.0",
-  "app": {
-    "name": "Nome do App",
-    "theme": { ... },
-    "designTokens": { "primaryColor": "#HEX", "spacingMedium": 16 },
-    "databaseSchema": { ... },
-    "authentication": {
-      "enabled": true,
-      "userTable": "users",
-      "emailField": "email",
-      "passwordField": "password",
-      "postLoginScreen": "dashboard",
-      "authRedirectScreen": "auth:login"
-    }
-  },
-  "screens": { "screen_id": { "requiresAuth": true, ... } },
-  "initialScreen": "screen_id"
+interface AILimits {
+  current: number;
+  max: number;
+  remaining: number;
 }
-
-SUAS CAPACIDADES:
-
-1. GERENCIAR TELAS E COMPONENTES:
-   - Criar, remover ou modificar telas e componentes.
-   - Componentes disponíveis: text, input, button, image, list, card, select, checkbox, container, divider, datepicker, timepicker.
-   - Usar \`"showIf": "session.isLoggedIn"|"session.isLoggedOut"\` para renderização condicional.
-
-2. GERENCIAR O SCHEMA DE BANCO DE DADOS:
-   - Criar e modificar o "databaseSchema".
-   - Tipos de campo suportados: "string", "number", "boolean", "date", "time".
-   - Exemplo: "fields": { "title": { "type": "string", "description": "Título da tarefa" }, "isComplete": { "type": "boolean", "default": false } }
-
-3. GERENCIAR AUTENTICAÇÃO:
-   - Habilitar autenticação configurando o objeto \`app.authentication\`.
-   - Proteger telas com \`"requiresAuth": true\`.
-   - Usar as telas mágicas \`"auth:login"\` e \`"auth:signup"\` em ações de navegação.
-   - Usar as ações \`"auth:login"\`, \`"auth:signup"\`, e \`"auth:logout"\` em botões.
-
-4. USAR DESIGN TOKENS:
-   - Usar variáveis definidas em \`app.designTokens\` para manter a consistência.
-   - Aplicar tokens a propriedades de estilo prefixando com '$', por exemplo: \`"marginBottom": "$spacingMedium"\`.
-
-CONECTANDO UI AO BANCO DE DADOS:
-- Botões: \`"action": { "type": "submit", "target": "database", ... }\`.
-- Listas: \`"dataSource": { "table": "table_name" }\`.
-- Templates: \`"title": "{{fieldName}}"\` para dados de lista, e \`"content": "{{session.user.email}}"\` para dados do usuário logado.
-
-MODIFICANDO JSON EXISTENTE:
-- Se um JSON ATUAL for fornecido, seu trabalho é MODIFICÁ-LO, não recriá-lo do zero.
-- Analise o pedido do usuário e o JSON ATUAL para entender o contexto.
-- Aplique as alterações solicitadas de forma incremental.
-
-REGRAS DE RESPOSTA:
-- RESPONDA APENAS COM O JSON COMPLETO E ATUALIZADO.
-- NÃO inclua explicações, comentários ou markdown (como \`\`\`json). Apenas o JSON puro.`;
 
 interface AIAssistantProps {
   jsonString: string;
@@ -107,69 +54,234 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ jsonString, setJsonStr
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [limits, setLimits] = useState<AILimits | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [currentUsageId, setCurrentUsageId] = useState<string | null>(null);
+
+  // Gerar sugestões inteligentes baseadas no JSON atual
+  const suggestions = useMemo(() => getPromptSuggestions(jsonString), [jsonString]);
+  const tips = useMemo(() => getContextualTips(jsonString), [jsonString]);
+
+  // Carregar limites ao montar componente
+  useEffect(() => {
+    fetchLimits();
+  }, []);
+
+  const fetchLimits = async () => {
+    try {
+      const response = await fetch('/api/ai/generate');
+      if (response.ok) {
+        const data = await response.json();
+        setLimits(data.limits);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar limites:', error);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert('Por favor, descreva a tela que deseja criar');
       return;
     }
+
     setIsGenerating(true);
     setSuggestion(null);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      const fullPrompt = `JSON ATUAL:\n${jsonString}\n\nPEDIDO DO USUÁRIO: ${prompt}`;
+    setError(null);
+    setWarnings([]);
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: fullPrompt,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION
-        }
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          currentJson: jsonString,
+        }),
       });
 
-      let generated = response.text.trim();
-      if (generated.startsWith('```json')) {
-        generated = generated.substring(7, generated.length - 3).trim();
-      } else if (generated.startsWith('```')) {
-        generated = generated.substring(3, generated.length - 3).trim();
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Erros de limite, validação, etc.
+        if (response.status === 429) {
+          setError(data.upgradeMessage || 'Limite diário atingido');
+          setLimits(data.limits);
+        } else {
+          setError(data.error || 'Erro ao gerar interface');
+        }
+        return;
       }
 
-      try {
-        const parsed = JSON.parse(generated);
-        const prettyJson = JSON.stringify(parsed, null, 2);
-        setSuggestion(prettyJson);
-      } catch (e) {
-        console.error("Generated content is not valid JSON:", e);
-        alert("A IA retornou um JSON inválido. Tente novamente ou ajuste o pedido.");
+      // Sucesso
+      if (data.prettyJson) {
+        setSuggestion(data.prettyJson);
+        setWarnings(data.warnings || []);
+        setLimits(data.limits);
+        // Armazenar ID do registro para feedback posterior
+        setCurrentUsageId(data.usageId);
       }
     } catch (error) {
-      console.error('Error generating UI with Gemini:', error);
-      alert('An error occurred while generating the UI. Please check the console for details.');
+      console.error('Erro ao chamar API:', error);
+      setError('Erro de conexão. Verifique sua internet e tente novamente.');
     } finally {
       setIsGenerating(false);
     }
   };
   
-  const handleAcceptSuggestion = () => {
-      if (suggestion) {
-          setJsonString(suggestion);
-          setSuggestion(null);
-          setPrompt('');
-          setActiveTab('editor');
-      }
-  }
-
-  const handleCancelSuggestion = () => {
+  const handleAcceptSuggestion = async () => {
+    if (suggestion) {
+      setJsonString(suggestion);
       setSuggestion(null);
-  }
+      setPrompt('');
+      setActiveTab('editor');
+
+      // Enviar feedback positivo se tivermos o usageId
+      if (currentUsageId) {
+        try {
+          await fetch('/api/ai/feedback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              usageId: currentUsageId,
+              accepted: true,
+            }),
+          });
+        } catch (error) {
+          console.error('Erro ao enviar feedback:', error);
+        }
+      }
+    }
+  };
+
+  const handleCancelSuggestion = async () => {
+    // Enviar feedback negativo se tivermos o usageId
+    if (currentUsageId) {
+      try {
+        await fetch('/api/ai/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            usageId: currentUsageId,
+            accepted: false,
+          }),
+        });
+      } catch (error) {
+        console.error('Erro ao enviar feedback:', error);
+      }
+    }
+
+    setSuggestion(null);
+    setCurrentUsageId(null);
+  };
 
   return (
     <div className="p-4 flex flex-col h-full bg-gray-50 rounded-b-lg relative">
+        {/* Limites de uso */}
+        {limits && (
+          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center gap-2 text-sm">
+              <Info size={16} className="text-blue-600" />
+              <span className="text-blue-900">
+                Requisições hoje: <strong>{limits.current}/{limits.max === -1 ? '∞' : limits.max}</strong>
+                {limits.remaining > 0 && limits.remaining !== -1 && (
+                  <span className="text-blue-700"> ({limits.remaining} restantes)</span>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Mensagem de erro */}
+        {error && (
+          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={18} className="text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-900">Erro</p>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Warnings de validação */}
+        {warnings.length > 0 && (
+          <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={18} className="text-yellow-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-yellow-900">Avisos</p>
+                <ul className="text-sm text-yellow-700 list-disc list-inside">
+                  {warnings.map((warning, idx) => (
+                    <li key={idx}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => setWarnings([])}
+                className="text-yellow-400 hover:text-yellow-600"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         <p className="text-sm text-gray-600 mb-4">
             Descreva a interface que você quer criar ou modificar, e a IA irá gerar o JSON para você.
         </p>
-        
+
+        {/* Dicas contextuais */}
+        {tips.length > 0 && (
+          <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded-md">
+            <div className="flex items-start gap-2">
+              <Lightbulb size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                {tips.map((tip, idx) => (
+                  <p key={idx} className="text-xs text-purple-700 mb-1 last:mb-0">
+                    {tip}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sugestões inteligentes */}
+        {suggestions.length > 0 && (
+          <div className="mb-3">
+            <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+              <Lightbulb size={14} />
+              Sugestões baseadas no seu app:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setPrompt(suggestion)}
+                  className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs text-gray-700 hover:bg-gray-50 hover:border-blue-400 transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 flex flex-col min-h-0">
             <label htmlFor="ai-prompt" className="text-sm font-medium text-gray-700 mb-2">Seu pedido:</label>
             <textarea
