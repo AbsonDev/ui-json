@@ -87,6 +87,11 @@ export async function getUserApps() {
         isPublic: true,
         version: true,
         databaseData: true,
+        publishedAt: true,
+        publishedSlug: true,
+        viewCount: true,
+        lastViewedAt: true,
+        showWatermark: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -329,5 +334,316 @@ export async function updateAppDatabaseData(id: string, databaseData: any) {
     }
     logError(error instanceof Error ? error : new Error('Failed to update app database data'), { appId: id })
     throw new Error('Failed to update app data. Please try again later.')
+  }
+}
+
+// ============================================
+// Publishing & Deployment Actions
+// ============================================
+
+const publishAppSchema = z.object({
+  appId: z.string().uuid('Invalid app ID'),
+  slug: z.string()
+    .min(3, 'Slug must be at least 3 characters')
+    .max(50, 'Slug must be less than 50 characters')
+    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
+    .optional(),
+})
+
+/**
+ * Publish an app to make it publicly accessible
+ */
+export async function publishApp(data: z.infer<typeof publishAppSchema>) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized: Please log in to publish apps')
+    }
+
+    const validated = publishAppSchema.parse(data)
+
+    // Verify ownership
+    const app = await prisma.app.findUnique({
+      where: { id: validated.appId },
+      select: {
+        userId: true,
+        name: true,
+        isPublic: true,
+        publishedSlug: true,
+      },
+    })
+
+    if (!app || app.userId !== session.user.id) {
+      throw new Error('App not found or you do not have permission to publish this app')
+    }
+
+    // Generate slug if not provided
+    let slug = validated.slug
+    if (!slug) {
+      // Auto-generate from app name
+      slug = app.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 50)
+
+      // Ensure uniqueness by adding random suffix if needed
+      const existing = await prisma.app.findUnique({
+        where: { publishedSlug: slug },
+      })
+
+      if (existing && existing.id !== validated.appId) {
+        slug = `${slug}-${Math.random().toString(36).substring(2, 8)}`
+      }
+    } else {
+      // Check if slug is already taken by another app
+      const existing = await prisma.app.findUnique({
+        where: { publishedSlug: slug },
+      })
+
+      if (existing && existing.id !== validated.appId) {
+        throw new Error('This slug is already taken. Please choose a different one.')
+      }
+    }
+
+    // Get user's plan to determine watermark visibility
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { planTier: true },
+    })
+
+    const showWatermark = user?.planTier === 'FREE'
+
+    // Update app to published state
+    const updatedApp = await prisma.app.update({
+      where: { id: validated.appId },
+      data: {
+        isPublic: true,
+        publishedAt: app.isPublic ? undefined : new Date(), // Only set if not already published
+        publishedSlug: slug,
+        showWatermark,
+      },
+    })
+
+    logUserAction('publish_app', session.user.id, {
+      appId: validated.appId,
+      appName: app.name,
+      slug,
+      planTier: user?.planTier,
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/published/${slug}`)
+
+    return {
+      success: true,
+      slug,
+      url: `/published/${slug}`,
+      app: updatedApp,
+    }
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(error.errors[0].message)
+    }
+    if (error instanceof Error && error.message.includes('already taken')) {
+      throw error
+    }
+    logError(error instanceof Error ? error : new Error('Failed to publish app'))
+    throw new Error('Failed to publish app. Please try again later.')
+  }
+}
+
+/**
+ * Unpublish an app (make it private)
+ */
+export async function unpublishApp(appId: string) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized: Please log in to unpublish apps')
+    }
+
+    // Verify ownership
+    const app = await prisma.app.findUnique({
+      where: { id: appId },
+      select: { userId: true, name: true, publishedSlug: true },
+    })
+
+    if (!app || app.userId !== session.user.id) {
+      throw new Error('App not found or you do not have permission to unpublish this app')
+    }
+
+    // Update app to private state
+    await prisma.app.update({
+      where: { id: appId },
+      data: {
+        isPublic: false,
+        // Keep publishedSlug for potential re-publishing
+      },
+    })
+
+    logUserAction('unpublish_app', session.user.id, {
+      appId,
+      appName: app.name,
+    })
+
+    revalidatePath('/dashboard')
+    if (app.publishedSlug) {
+      revalidatePath(`/published/${app.publishedSlug}`)
+    }
+
+    return { success: true }
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error('Failed to unpublish app'))
+    throw new Error('Failed to unpublish app. Please try again later.')
+  }
+}
+
+/**
+ * Get published app by slug (public endpoint - no auth required)
+ */
+export async function getPublishedApp(slug: string) {
+  try {
+    const app = await prisma.app.findUnique({
+      where: {
+        publishedSlug: slug,
+        isPublic: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        json: true,
+        description: true,
+        databaseData: true,
+        showWatermark: true,
+        viewCount: true,
+        publishedAt: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    if (!app) {
+      return null
+    }
+
+    // Increment view count (async, don't wait)
+    prisma.app.update({
+      where: { id: app.id },
+      data: {
+        viewCount: { increment: 1 },
+        lastViewedAt: new Date(),
+      },
+    }).catch((err) => {
+      logError(err instanceof Error ? err : new Error('Failed to increment view count'))
+    })
+
+    return app
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error('Failed to get published app'))
+    return null
+  }
+}
+
+/**
+ * Track a view for a published app
+ */
+export async function trackAppView(appId: string, metadata: {
+  visitorIp?: string
+  userAgent?: string
+  referrer?: string
+  sessionId?: string
+}) {
+  try {
+    // Hash IP for privacy
+    const hashedIp = metadata.visitorIp
+      ? Buffer.from(metadata.visitorIp).toString('base64')
+      : undefined
+
+    await prisma.appView.create({
+      data: {
+        appId,
+        visitorIp: hashedIp,
+        userAgent: metadata.userAgent,
+        referrer: metadata.referrer,
+        sessionId: metadata.sessionId,
+      },
+    })
+  } catch (error) {
+    // Silent fail - don't break app viewing if analytics fails
+    logError(error instanceof Error ? error : new Error('Failed to track app view'))
+  }
+}
+
+/**
+ * Get analytics for a published app (owner only)
+ */
+export async function getAppAnalytics(appId: string) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized: Please log in to view analytics')
+    }
+
+    // Verify ownership
+    const app = await prisma.app.findUnique({
+      where: { id: appId },
+      select: { userId: true },
+    })
+
+    if (!app || app.userId !== session.user.id) {
+      throw new Error('App not found or you do not have permission to view analytics')
+    }
+
+    const [totalViews, last30Days, last7Days, today] = await Promise.all([
+      // Total views
+      prisma.appView.count({
+        where: { appId },
+      }),
+      // Last 30 days
+      prisma.appView.count({
+        where: {
+          appId,
+          viewedAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      }),
+      // Last 7 days
+      prisma.appView.count({
+        where: {
+          appId,
+          viewedAt: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+      }),
+      // Today
+      prisma.appView.count({
+        where: {
+          appId,
+          viewedAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+        },
+      }),
+    ])
+
+    return {
+      totalViews,
+      last30Days,
+      last7Days,
+      today,
+    }
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error('Failed to get app analytics'))
+    throw new Error('Failed to load analytics. Please try again later.')
   }
 }
