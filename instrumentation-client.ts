@@ -65,3 +65,9 @@ export function register() {
     ],
   })
 }
+
+/**
+ * Hook to capture router transitions for Sentry performance monitoring
+ * Required by @sentry/nextjs for instrumentation
+ */
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart

@@ -17,7 +17,7 @@ export interface AuthContext {
   };
 }
 
-export interface AuthResult {
+export type AuthResult = {
   success: true;
   context: AuthContext;
 } | {
