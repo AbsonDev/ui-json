@@ -4,7 +4,14 @@
 
 # 🚀 UI-JSON Visualizer
 
+[![CI/CD Pipeline](https://github.com/AbsonDev/ui-json/actions/workflows/ci.yml/badge.svg)](https://github.com/AbsonDev/ui-json/actions/workflows/ci.yml)
+[![Mobile Build](https://github.com/AbsonDev/ui-json/actions/workflows/mobile-build.yml/badge.svg)](https://github.com/AbsonDev/ui-json/actions/workflows/mobile-build.yml)
+[![Production Ready](https://img.shields.io/badge/production-ready-brightgreen)](./PRODUCTION_READINESS.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Uma plataforma **low-code moderna** para criar aplicativos móveis usando JSON declarativo. Inspirada na **Mobilex da MTM Tecnologia**, com backend completo, autenticação segura e persistência em PostgreSQL.
+
+**Status:** 🟢 Production Ready (Score: 9.2/10) | [Ver Análise Completa](./PRODUCTION_READINESS.md)
 
 ## ✨ Funcionalidades
 
