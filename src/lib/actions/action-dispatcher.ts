@@ -14,7 +14,7 @@ import { handleSubmit } from './handlers/submit-handler';
 import { handleDeleteRecord } from './handlers/database-handler';
 import { handleAuthLogin, handleAuthSignup, handleAuthLogout } from './handlers/auth-handler';
 import { handleAI } from './handlers/ai-handler';
-import logger, { logError } from '../logger';
+import logger from '../universal-logger';
 
 /**
  * Type for action handler functions
@@ -59,10 +59,8 @@ export async function dispatchAction(action: UIAction, context: ActionContext): 
     try {
       await handler(action, context);
     } catch (error) {
-      logError(
-        error instanceof Error ? error : new Error(`Error handling action ${action.type}`),
-        { actionType: action.type }
-      );
+      const err = error instanceof Error ? error : new Error(`Error handling action ${action.type}`)
+      logger.error(err.message, { actionType: action.type, stack: err.stack });
     }
   } else {
     logger.warn('Unknown action type:', { actionType: action.type });

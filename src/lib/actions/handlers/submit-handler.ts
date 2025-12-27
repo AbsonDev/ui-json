@@ -5,7 +5,7 @@
 
 import { UIAction } from '../../../types';
 import { ActionContext } from '../action-context';
-import logger, { logError } from '../../logger';
+import logger from '../../universal-logger';
 
 export function handleSubmit(
   action: Extract<UIAction, { type: 'submit' }>,

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AnalyticsProvider } from '@/contexts/AnalyticsContext'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: 'UI-JSON Visualizer',
@@ -24,6 +25,13 @@ export default function RootLayout({
             disableTransitionOnChange={false}
           >
             {children}
+            <Toaster
+              position="top-right"
+              expand={false}
+              richColors
+              closeButton
+              theme="system"
+            />
           </ThemeProvider>
         </AnalyticsProvider>
       </body>

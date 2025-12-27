@@ -5,7 +5,7 @@
 
 import { UIAction } from '../../../types';
 import { ActionContext } from '../action-context';
-import logger, { logError } from '../../logger';
+import logger from '../../universal-logger';
 
 export async function handleAI(
   action: Extract<UIAction, { type: 'ai' }>,
@@ -15,7 +15,7 @@ export async function handleAI(
 
   // Validar que temos um app
   if (!uiApp) {
-    logError(new Error('No app context available for AI action'));
+    logger.error('No app context available for AI action');
     return;
   }
 
@@ -74,7 +74,8 @@ export async function handleAI(
       handleAction(action.onSuccess);
     }
   } catch (error) {
-    logError(error instanceof Error ? error : new Error('Erro ao executar ação de IA'));
+    const err = error instanceof Error ? error : new Error('Erro ao executar ação de IA')
+    logger.error(err.message, { stack: err.stack });
 
     // Executar ação de erro se houver
     if (action.onError) {
