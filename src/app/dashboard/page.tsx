@@ -27,6 +27,8 @@ import { DevicePreview } from '@/components/DevicePreview'
 import { AnimatedIconButton } from '@/components/AnimatedComponents'
 import { SkeletonCard, SkeletonList, SkeletonText } from '@/components/Skeleton'
 import { toast } from 'sonner'
+import { KeyboardShortcutsOverlay } from '@/components/KeyboardShortcuts'
+import { FloatingShapes } from '@/components/GradientBackground'
 
 // --- Context for Design Tokens ---
 export const DesignTokensContext = createContext<Record<string, any>>({})
@@ -821,6 +823,7 @@ export default function DashboardPage() {
                 onSkip={skipOnboarding}
               />
             )}
+            <KeyboardShortcutsOverlay />
           </div>
         </SessionContext.Provider>
       </DatabaseContext.Provider>
