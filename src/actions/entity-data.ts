@@ -10,7 +10,6 @@ import type {
   PaginatedResponse,
   EntityField,
 } from '@/types';
-import { z } from 'zod';
 
 // ============================================
 // Helper Functions
@@ -194,7 +193,7 @@ export async function getEntityData(
     }
 
     // Verify ownership
-    const entity = await verifyEntityOwnership(entityId, session.user.id);
+    await verifyEntityOwnership(entityId, session.user.id);
 
     const limit = query?.limit || 50;
     const offset = query?.offset || 0;
@@ -310,7 +309,7 @@ export async function createEntityData(
     const fields = entity.fields as EntityField[];
 
     // Apply defaults
-    let data = applyDefaults(request.data, fields);
+    const data = applyDefaults(request.data, fields);
 
     // Validate data
     const validation = validateEntityData(data, fields);

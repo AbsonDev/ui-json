@@ -225,7 +225,7 @@ const App: React.FC = () => {
     }
     
     return screen;
-  }, [uiApp, currentScreenId, session, authConfig]);
+  }, [uiApp, currentScreenId, session, authConfig, setCurrentScreenId]);
 
   const theme = uiApp?.app?.theme;
 

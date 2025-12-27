@@ -350,7 +350,7 @@ describe('MobileExportDialog', () => {
       render(
         <MobileExportDialog
           {...defaultProps}
-          projectName="A".repeat(100)}
+          projectName={"A".repeat(100)}
         />
       );
       expect(screen.getByText('Exportar para Mobile')).toBeInTheDocument();

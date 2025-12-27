@@ -122,7 +122,6 @@ class UpstashRateLimiter implements RateLimitBackend {
   ): Promise<RateLimitResult> {
     const key = `ratelimit:${identifier}`
     const now = Date.now()
-    const windowSeconds = Math.ceil(windowMs / 1000)
 
     try {
       // Use Redis pipeline for atomic operations
