@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logError } from '@/lib/logger'
 
 /**
  * POST /api/subscription/cancel
@@ -56,7 +57,7 @@ export async function POST() {
       message: 'Subscription will be canceled at the end of the billing period',
     })
   } catch (error) {
-    console.error('Failed to cancel subscription:', error)
+    logError(error instanceof Error ? error : new Error('Failed to cancel subscription'))
     return NextResponse.json(
       { error: 'Failed to cancel subscription' },
       { status: 500 }

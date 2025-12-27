@@ -6,6 +6,7 @@
  */
 
 import { Resend } from 'resend'
+import logger, { logError } from '../logger'
 
 export const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -29,9 +30,9 @@ export async function sendEmail({
   replyTo?: string
 }) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('⚠️ RESEND_API_KEY not configured. Email not sent.')
-    console.log(`Would send email to: ${to}`)
-    console.log(`Subject: ${subject}`)
+    logger.warn('⚠️ RESEND_API_KEY not configured. Email not sent.')
+    logger.info(`Would send email to: ${to}`)
+    logger.info(`Subject: ${subject}`)
     return { success: false, error: 'Email not configured' }
   }
 
@@ -44,10 +45,10 @@ export async function sendEmail({
       replyTo,
     })
 
-    console.log(`✉️ Email sent to ${to}: ${subject}`)
+    logger.info(`✉️ Email sent to ${to}: ${subject}`)
     return { success: true, data }
   } catch (error) {
-    console.error('Failed to send email:', error)
+    logError(error instanceof Error ? error : new Error('Failed to send email'))
     return { success: false, error }
   }
 }

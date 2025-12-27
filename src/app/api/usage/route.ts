@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 /**
  * GET /api/usage
@@ -63,7 +64,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch usage:', error)
+    logError(error instanceof Error ? error : new Error('Failed to fetch usage'))
     return NextResponse.json(
       { error: 'Failed to fetch usage' },
       { status: 500 }

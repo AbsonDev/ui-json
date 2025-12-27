@@ -14,6 +14,7 @@ import { handleSubmit } from './handlers/submit-handler';
 import { handleDeleteRecord } from './handlers/database-handler';
 import { handleAuthLogin, handleAuthSignup, handleAuthLogout } from './handlers/auth-handler';
 import { handleAI } from './handlers/ai-handler';
+import logger, { logError } from '../logger';
 
 /**
  * Type for action handler functions
@@ -48,7 +49,7 @@ const actionHandlers: Record<UIAction['type'], ActionHandler<any>> = {
  */
 export async function dispatchAction(action: UIAction, context: ActionContext): Promise<void> {
   if (!action || !action.type) {
-    console.warn('Invalid action:', action);
+    logger.warn('Invalid action:', { action });
     return;
   }
 
@@ -58,10 +59,13 @@ export async function dispatchAction(action: UIAction, context: ActionContext): 
     try {
       await handler(action, context);
     } catch (error) {
-      console.error(`Error handling action ${action.type}:`, error);
+      logError(
+        error instanceof Error ? error : new Error(`Error handling action ${action.type}`),
+        { actionType: action.type }
+      );
     }
   } else {
-    console.warn('Unknown action type:', action.type);
+    logger.warn('Unknown action type:', { actionType: action.type });
   }
 }
 

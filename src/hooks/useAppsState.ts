@@ -25,7 +25,7 @@ export function useAppsState(initialApps: App[]) {
       try {
         return JSON.parse(savedApps);
       } catch (e) {
-        console.error('Failed to parse saved apps from localStorage', e);
+        // Failed to parse saved apps from localStorage
         return initialApps;
       }
     }

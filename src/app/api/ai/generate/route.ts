@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
 
   // 4. Validar API Key do Gemini
   if (!env.GEMINI_API_KEY) {
-    console.error('GEMINI_API_KEY não configurada');
+    logError(new Error('GEMINI_API_KEY não configurada'));
     return NextResponse.json(
       { error: 'Serviço de IA temporariamente indisponível' },
       { status: 503 }
@@ -271,7 +271,7 @@ export async function POST(req: NextRequest) {
       generatedJson = generatedJson.substring(3, generatedJson.length - 3).trim();
     }
   } catch (error) {
-    console.error('Erro ao chamar Google Gemini:', error);
+    logError(error instanceof Error ? error : new Error('Erro ao chamar Google Gemini'));
     aiError = error instanceof Error ? error.message : 'Erro desconhecido';
 
     // Salvar erro no banco

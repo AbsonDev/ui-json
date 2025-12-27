@@ -5,6 +5,7 @@
 
 import { UIAction } from '../../../types';
 import { ActionContext } from '../action-context';
+import logger, { logError } from '../../logger';
 
 export function handleSubmit(
   action: Extract<UIAction, { type: 'submit' }>,
@@ -71,7 +72,7 @@ export function handleSubmit(
         return response.json();
       })
       .then((data) => {
-        console.log('API Success:', data);
+        logger.info('API Success:', { data });
 
         // Clear form fields on success
         if (action.fields) {
@@ -88,7 +89,7 @@ export function handleSubmit(
         }
       })
       .catch((error) => {
-        console.error('API Error:', error);
+        logError(error instanceof Error ? error : new Error('API Error'));
 
         // Execute error action
         if (action.onError) {
@@ -96,6 +97,6 @@ export function handleSubmit(
         }
       });
   } else {
-    console.warn('Invalid submit action configuration', action);
+    logger.warn('Invalid submit action configuration', { action });
   }
 }

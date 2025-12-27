@@ -94,7 +94,6 @@ export async function POST(req: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Checkout error:', error)
     logError(error instanceof Error ? error : new Error('Checkout failed'))
 
     if (error instanceof z.ZodError) {
