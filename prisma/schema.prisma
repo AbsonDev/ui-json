@@ -123,6 +123,15 @@ model App {
   // Database state for this app (usado quando useLocalStorage = true)
   databaseData Json?    // Stores the dynamic database content
 
+  // Publishing & Analytics
+  publishedAt    DateTime? // When the app was published
+  publishedSlug  String?   @unique // Custom URL slug (e.g., "my-todo-app")
+  viewCount      Int       @default(0) // Total views
+  lastViewedAt   DateTime? // Last time someone viewed this published app
+
+  // Watermark control (PRO+ can remove)
+  showWatermark  Boolean   @default(true)
+
   // Ownership
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -132,6 +141,9 @@ model App {
 
   // AI usage in this app
   appAIUsage  AppAIUsage[]
+
+  // Published app views
+  appViews    AppView[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -143,6 +155,7 @@ model App {
   @@index([userId, createdAt]) // Composite index for recently created apps
   @@index([isPublic, createdAt]) // Index for public app discovery
   @@index([useLocalStorage]) // Index for storage type queries
+  @@index([publishedSlug]) // Index for published app lookups
   @@map("apps")
 }
 
@@ -593,4 +606,36 @@ enum ConfigDataType {
   NUMBER
   JSON
   BOOLEAN
+}
+
+// ============================================
+// Published App Analytics
+// ============================================
+
+model AppView {
+  id          String   @id @default(cuid())
+
+  // App relation
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // Visitor info
+  visitorIp   String?  // IP address (hashed for privacy)
+  userAgent   String?  @db.Text
+  referrer    String?  @db.Text
+
+  // Geo/Device data (optional, can be enriched later)
+  country     String?
+  device      String?  // mobile, desktop, tablet
+
+  // Session tracking
+  sessionId   String?  // For tracking unique sessions
+
+  viewedAt    DateTime @default(now())
+
+  @@index([appId])
+  @@index([appId, viewedAt])
+  @@index([viewedAt])
+  @@index([sessionId])
+  @@map("app_views")
 }
