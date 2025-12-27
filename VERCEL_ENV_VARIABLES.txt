@@ -1,0 +1,98 @@
+# ============================================
+# VARIÁVEIS DE AMBIENTE PARA O VERCEL
+# ============================================
+#
+# COPIE E COLE ESTAS VARIÁVEIS NO VERCEL:
+# Vercel Dashboard → Seu Projeto → Settings → Environment Variables
+#
+# Adicione para os ambientes: Production, Preview, Development
+#
+# ============================================
+
+# ============================================
+# 1. DATABASE (Railway PostgreSQL)
+# ============================================
+DATABASE_URL=postgresql://postgres:kKfhSSRlDNDqXKOiyREVJfCZYyDcGthc@metro.proxy.rlwy.net:44511/railway
+
+# ============================================
+# 2. NEXTAUTH (Authentication)
+# ============================================
+# IMPORTANTE: Substitua pela sua URL do Vercel!
+# Exemplo: https://ui-json.vercel.app ou https://seudominio.com
+NEXTAUTH_URL=https://SEU-PROJETO.vercel.app
+
+# Secret gerado (não altere)
+NEXTAUTH_SECRET=5XA6D/1+yic7XmFyFmqMXuBOmD7em/LlOy0FfJ6v4m0=
+
+# ============================================
+# 3. ENCRYPTION (Para credenciais no DB)
+# ============================================
+# Exatamente 32 caracteres (não altere)
+ENCRYPTION_KEY=8mj8ZvzXEdEh7slXy+tQ6PqGUWUVtOlJ
+
+# ============================================
+# 4. CRON JOBS (Email automation)
+# ============================================
+# Secret gerado (não altere)
+CRON_SECRET=5gloGZz+5FjufylkNuE5Iw0QJGOtIsvOoa8wTsoPEGw=
+
+# ============================================
+# 5. NODE ENVIRONMENT
+# ============================================
+NODE_ENV=production
+
+# ============================================
+# VARIÁVEIS OPCIONAIS (Configure depois se precisar)
+# ============================================
+
+# Google Gemini AI (para features de IA)
+# GEMINI_API_KEY=sua-chave-aqui
+
+# Stripe (para pagamentos)
+# STRIPE_SECRET_KEY=sk_live_...
+# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+# STRIPE_PRICE_PRO_MONTHLY=price_...
+# STRIPE_PRICE_PRO_YEARLY=price_...
+# STRIPE_PRICE_TEAM_MONTHLY=price_...
+# STRIPE_PRICE_TEAM_YEARLY=price_...
+
+# Resend (para emails)
+# RESEND_API_KEY=re_...
+
+# Upstash Redis (para cache)
+# UPSTASH_REDIS_REST_URL=https://...
+# UPSTASH_REDIS_REST_TOKEN=...
+
+# Mixpanel (para analytics)
+# NEXT_PUBLIC_MIXPANEL_TOKEN=...
+
+# Sentry (para error tracking)
+# SENTRY_DSN=https://...
+# NEXT_PUBLIC_SENTRY_DSN=https://...
+
+# ============================================
+# PRÓXIMOS PASSOS
+# ============================================
+#
+# 1. ✅ Banco de dados Railway criado
+# 2. ✅ Secrets gerados
+# 3. ⏳ VOCÊ PRECISA FAZER:
+#
+#    a) Descobrir a URL do seu projeto no Vercel:
+#       - Vercel Dashboard → Seu Projeto → Domains
+#       - Copie a URL (ex: ui-json-xyz123.vercel.app)
+#       - Substitua em NEXTAUTH_URL acima
+#
+#    b) Adicionar todas as variáveis no Vercel:
+#       - Settings → Environment Variables
+#       - Clique em "Add New"
+#       - Cole cada variável (Name = Value)
+#       - Marque: Production, Preview, Development
+#
+#    c) Fazer Redeploy:
+#       - Deployments → Último deployment → Redeploy
+#
+#    d) As migrações do Prisma serão aplicadas automaticamente no build
+#
+# ============================================
