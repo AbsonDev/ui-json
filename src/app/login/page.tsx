@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { FloatingShapes } from '@/components/GradientBackground'
+import { motion } from 'framer-motion'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -41,12 +43,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-2xl">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">UI-JSON Visualizer</h2>
-          <p className="mt-2 text-sm text-gray-600">Sign in to your account</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4 relative overflow-hidden">
+      <FloatingShapes />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-md w-full space-y-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl p-10 rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 relative z-10"
+      >
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center"
+        >
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            UI-JSON Visualizer
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Sign in to your account</p>
+        </motion.div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
@@ -100,7 +115,7 @@ export default function LoginPage() {
             </Link>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   )
 }
