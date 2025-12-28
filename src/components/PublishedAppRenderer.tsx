@@ -123,7 +123,7 @@ export const PublishedAppRenderer: React.FC<PublishedAppRendererProps> = ({
       case 'deleteRecord':
         setDatabaseData({
           ...databaseData,
-          [action.table]: (databaseData[action.table] || []).filter(r => r.id !== action.recordId)
+          [action.table]: (databaseData[action.table] || []).filter((r: any) => r.id !== action.recordId)
         })
         break
 
@@ -132,7 +132,7 @@ export const PublishedAppRenderer: React.FC<PublishedAppRendererProps> = ({
         const email = formState[action.fields.email]
         const password = formState[action.fields.password]
         const userTable = databaseData[authConfig.userTable] || []
-        const user = userTable.find(u => u[authConfig.emailField] === email && u[authConfig.passwordField] === password)
+        const user = userTable.find((u: any) => u[authConfig.emailField] === email && u[authConfig.passwordField] === password)
 
         if (user) {
           setSession({ user })
@@ -147,7 +147,7 @@ export const PublishedAppRenderer: React.FC<PublishedAppRendererProps> = ({
         if (!authConfig) return
         const email = formState[action.fields.email]
         const userTable = databaseData[authConfig.userTable] || []
-        const userExists = userTable.some(u => u[authConfig.emailField] === email)
+        const userExists = userTable.some((u: any) => u[authConfig.emailField] === email)
 
         if (userExists) {
           if (action.onError) handleAction(action.onError)

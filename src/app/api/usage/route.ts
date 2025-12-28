@@ -40,10 +40,10 @@ export async function GET() {
     })
 
     // Count exports this month
-    const exportsCount = usageMetrics.filter(m => m.metricType === 'EXPORT').length
+    const exportsCount = usageMetrics.filter((m: typeof usageMetrics[number]) => m.metricType === 'EXPORT').length
 
     // Count builds this month
-    const buildsCount = usageMetrics.filter(m => m.metricType === 'BUILD').length
+    const buildsCount = usageMetrics.filter((m: typeof usageMetrics[number]) => m.metricType === 'BUILD').length
 
     // Count apps
     const appsCount = user.apps.length

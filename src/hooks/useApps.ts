@@ -115,7 +115,8 @@ export function useApps(): UseAppsReturn {
   const updateAppData = useCallback(async (id: string, data: Partial<App>) => {
     try {
       setError(null)
-      await updateApp({ id, ...data })
+      const cleanedData = { ...data, description: data.description ?? undefined }
+      await updateApp({ id, ...cleanedData })
 
       setApps(prev => prev.map(app =>
         app.id === id ? { ...app, ...data } : app

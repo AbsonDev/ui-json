@@ -126,13 +126,13 @@ export default function DashboardPage() {
 
   const [selectedAppIndex, setSelectedAppIndex] = useState(0)
 
+  const currentApp = apps[selectedAppIndex]
+  const jsonString = useMemo(() => currentApp?.json || '', [currentApp])
+
   // Version History
   const { saveVersion } = useVersionHistory(currentApp?.id || '', jsonString)
   const [saving, setSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const currentApp = apps[selectedAppIndex]
-  const jsonString = useMemo(() => currentApp?.json || '', [currentApp])
 
   const [error, setError] = useState<string | null>(null)
   const [currentScreenId, setCurrentScreenId] = useState<string | null>(null)
@@ -310,7 +310,7 @@ export default function DashboardPage() {
       case 'deleteRecord':
         setDatabaseData({
             ...databaseData,
-            [action.table]: (databaseData[action.table] || []).filter(r => r.id !== action.recordId)
+            [action.table]: (databaseData[action.table] || []).filter((r: any) => r.id !== action.recordId)
         })
         break
 
@@ -319,7 +319,7 @@ export default function DashboardPage() {
         const email = formState[action.fields.email]
         const password = formState[action.fields.password]
         const userTable = databaseData[authConfig.userTable] || []
-        const user = userTable.find(u => u[authConfig.emailField] === email && u[authConfig.passwordField] === password)
+        const user = userTable.find((u: any) => u[authConfig.emailField] === email && u[authConfig.passwordField] === password)
 
         if (user) {
           setSession({ user })
@@ -334,7 +334,7 @@ export default function DashboardPage() {
         if (!authConfig) return
         const email = formState[action.fields.email]
         const userTable = databaseData[authConfig.userTable] || []
-        const userExists = userTable.some(u => u[authConfig.emailField] === email)
+        const userExists = userTable.some((u: any) => u[authConfig.emailField] === email)
 
         if (userExists) {
             if (action.onError) handleAction(action.onError)
@@ -593,7 +593,7 @@ export default function DashboardPage() {
                     >
                     {apps.map((app, index) => (
                         <option key={app.id} value={index} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
-                        {app.isPublic ? '🌐 ' : ''}{app.name}{app.isPublic && app.viewCount ? ` (${app.viewCount} views)` : ''}
+                        {app.isPublic ? '🌐 ' : ''}{app.name}{app.isPublic && (app as any).viewCount ? ` (${(app as any).viewCount} views)` : ''}
                         </option>
                     ))}
                     </select>
@@ -822,12 +822,11 @@ export default function DashboardPage() {
                   id: currentApp.id,
                   name: currentApp.name,
                   isPublic: currentApp.isPublic,
-                  publishedSlug: currentApp.publishedSlug || null,
+                  publishedSlug: (currentApp as any).publishedSlug || null,
                 }}
                 onClose={() => setShowPublishDialog(false)}
                 onPublished={() => {
                   // Refresh apps list
-                  refetch()
                   setShowPublishDialog(false)
                 }}
               />
