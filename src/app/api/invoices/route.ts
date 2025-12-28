@@ -30,7 +30,7 @@ export async function GET() {
     })
 
     return NextResponse.json(
-      invoices.map(invoice => ({
+      invoices.map((invoice: typeof invoices[number]) => ({
         id: invoice.id,
         amount: invoice.amount,
         currency: invoice.currency,

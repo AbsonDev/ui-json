@@ -106,8 +106,8 @@ export async function GET(req: NextRequest) {
         // Get usage stats (already loaded with include)
         const usageMetrics = user.usageMetrics
         const appsCreated = user.apps.length
-        const exportsCreated = usageMetrics.filter(m => m.metricType === 'EXPORT').length
-        const aiRequestsUsed = usageMetrics.filter(m => m.metricType === 'AI_REQUEST').length
+        const exportsCreated = usageMetrics.filter((m: typeof usageMetrics[number]) => m.metricType === 'EXPORT').length
+        const aiRequestsUsed = usageMetrics.filter((m: typeof usageMetrics[number]) => m.metricType === 'AI_REQUEST').length
 
         // Generate email
         const emailData = getTrialEmail(daysSinceTrial, {

@@ -297,7 +297,7 @@ export default function PricingPage() {
                     <li
                       key={i}
                       className={`flex items-start gap-3 ${
-                        feature.highlight ? 'bg-green-50 dark:bg-green-900/20 -mx-2 px-2 py-1 rounded' : ''
+                        (feature as any).highlight ? 'bg-green-50 dark:bg-green-900/20 -mx-2 px-2 py-1 rounded' : ''
                       }`}
                     >
                       {feature.included ? (
@@ -308,7 +308,7 @@ export default function PricingPage() {
                       <span
                         className={`text-sm ${
                           feature.included
-                            ? feature.bold
+                            ? (feature as any).bold
                               ? 'font-semibold'
                               : ''
                             : 'text-gray-400 dark:text-gray-600'

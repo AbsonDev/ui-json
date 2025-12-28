@@ -125,31 +125,28 @@ export async function POST(req: NextRequest) {
     }
 
     // 8. Chamar Gemini
-    const genAI = new GoogleGenAI(env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      systemInstruction,
-    });
+    const genAI = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
-    // Construir histórico de chat se houver
-    let chatRequest: any = { contents: [] };
+    // Construir conteúdo com histórico de chat se houver
+    let contents = finalPrompt;
 
     if (aiAction === 'chat' && chatHistory.length > 0) {
-      chatRequest.contents = chatHistory.map((msg: any) => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      }));
+      // Construir histórico formatado
+      const history = chatHistory.map((msg: any) =>
+        `${msg.role === 'assistant' ? 'Assistant' : 'User'}: ${msg.content}`
+      ).join('\n\n');
+      contents = `${history}\n\nUser: ${finalPrompt}`;
     }
 
-    // Adicionar prompt atual
-    chatRequest.contents.push({
-      role: 'user',
-      parts: [{ text: finalPrompt }],
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents,
+      config: {
+        systemInstruction,
+      },
     });
 
-    const result = await model.generateContent(chatRequest);
-    const response = result.response;
-    const text = response.text();
+    const text = result.text || '';
 
     // 9. Incrementar uso do DONO DO APP
     await incrementAIExecutionUsage(app.user.id, appId);
@@ -163,7 +160,7 @@ export async function POST(req: NextRequest) {
         aiAction,
         prompt: prompt.substring(0, 500), // Limitar tamanho
         result: text.substring(0, 1000),
-        tokensUsed: response.usageMetadata?.totalTokenCount || 0,
+        tokensUsed: 0, // Nova API não retorna usageMetadata
         responseTime,
         wasSuccessful: true,
         context: JSON.stringify(context),
@@ -172,7 +169,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       result: text,
-      tokensUsed: response.usageMetadata?.totalTokenCount || 0,
+      tokensUsed: 0, // Nova API não retorna usageMetadata
       responseTime,
     });
   } catch (error: any) {

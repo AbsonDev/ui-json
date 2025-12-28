@@ -43,7 +43,7 @@ export async function getUserDatabaseConnections() {
   })
 
   // Don't return actual passwords!
-  return connections.map((conn) => ({
+  return connections.map((conn: typeof connections[number]) => ({
     ...conn,
     password: '••••••••', // Masked for security
   }))

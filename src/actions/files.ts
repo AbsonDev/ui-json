@@ -387,7 +387,7 @@ export async function getFileQuota(appId: string, appUserId: string): Promise<Fi
       },
     });
 
-    const used = files.reduce((sum, file) => sum + file.size, 0);
+    const used = files.reduce((sum: number, file: typeof files[number]) => sum + file.size, 0);
     const count = files.length;
 
     const quota: FileQuota = {

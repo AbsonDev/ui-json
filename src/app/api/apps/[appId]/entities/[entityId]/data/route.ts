@@ -42,6 +42,13 @@ export async function GET(
       );
     }
 
+    if (!('data' in result) || !('pagination' in result)) {
+      return NextResponse.json(
+        { error: 'Invalid result format' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       data: result.data,
       pagination: result.pagination,

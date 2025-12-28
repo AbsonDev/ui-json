@@ -41,7 +41,7 @@ export default async function PublishedAppPage({ params }: PageProps) {
   }
 
   // Track view (async, non-blocking)
-  const headersList = headers()
+  const headersList = await headers()
   const userAgent = headersList.get('user-agent') || undefined
   const referrer = headersList.get('referer') || undefined
   const forwardedFor = headersList.get('x-forwarded-for')

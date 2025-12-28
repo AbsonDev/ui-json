@@ -92,7 +92,7 @@ export default function DatabasesPage() {
         alert('Connection successful!')
         await loadConnections()
       } else {
-        alert(`Connection failed: ${result.error}`)
+        alert(`Connection failed: ${result.message}`)
       }
     } catch (err: any) {
       alert(err.message || 'Failed to test connection')
@@ -107,6 +107,7 @@ export default function DatabasesPage() {
       setFormError(null)
 
       const result = await testConnectionBeforeCreate({
+        type: 'postgresql' as const,
         name: formData.name,
         host: formData.host,
         port: parseInt(formData.port),
@@ -119,7 +120,7 @@ export default function DatabasesPage() {
       if (result.success) {
         alert('Connection test successful! You can now save this connection.')
       } else {
-        setFormError(result.error || 'Connection test failed')
+        setFormError(result.message || 'Connection test failed')
       }
     } catch (err: any) {
       setFormError(err.message || 'Failed to test connection')
@@ -136,6 +137,7 @@ export default function DatabasesPage() {
       setFormError(null)
 
       const connectionData = {
+        type: 'postgresql' as const,
         name: formData.name,
         host: formData.host,
         port: parseInt(formData.port),

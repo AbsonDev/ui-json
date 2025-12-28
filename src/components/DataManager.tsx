@@ -41,7 +41,7 @@ export default function DataManager({ entity, onBack }: DataManagerProps) {
       offset: pagination.offset,
     });
 
-    if (result.success && result.data && result.pagination) {
+    if (result.success && 'data' in result && 'pagination' in result) {
       setRecords(result.data);
       setPagination(result.pagination);
     }

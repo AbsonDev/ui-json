@@ -4,7 +4,6 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 import logger, { logError } from '@/lib/logger'
-import { PlanTier } from '@prisma/client'
 import {
   identifyUser,
   trackEvent,
@@ -12,9 +11,13 @@ import {
   setUserProperties
 } from '@/lib/analytics/config'
 
+// Temporary type until Prisma Client is fully generated
+type PlanTier = 'FREE' | 'PRO' | 'TEAM' | 'ENTERPRISE'
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
-  const signature = headers().get('stripe-signature')
+  const headersList = await headers()
+  const signature = headersList.get('stripe-signature')
 
   if (!signature) {
     return NextResponse.json(
@@ -109,7 +112,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Subscription will be handled by subscription.created event
 }
 
-async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdate(subscription: Stripe.Subscription & { [key: string]: any }) {
   const userId = subscription.metadata?.userId
   const planTier = subscription.metadata?.planTier as 'PRO' | 'TEAM' | 'ENTERPRISE'
 
@@ -261,7 +264,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
-async function handleInvoicePaid(invoice: Stripe.Invoice) {
+async function handleInvoicePaid(invoice: Stripe.Invoice & { [key: string]: any }) {
   const userId = invoice.metadata?.userId || invoice.customer as string
 
   if (!userId) return
@@ -327,7 +330,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   }
 }
 
-async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice & { [key: string]: any }) {
   const userId = invoice.metadata?.userId
 
   if (!userId) return

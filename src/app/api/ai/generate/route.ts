@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { GoogleGenAI } from '@google/genai';
 import { validateUIJson, validateReferences } from '@/lib/validation/uiJsonSchema';
+import logger from '@/lib/logger';
 
 /**
  * Sistema de instrução para o Google Gemini
@@ -217,7 +218,7 @@ export async function POST(req: NextRequest) {
 
   // 4. Validar API Key do Gemini
   if (!env.GEMINI_API_KEY) {
-    logError(new Error('GEMINI_API_KEY não configurada'));
+    logger.error('GEMINI_API_KEY não configurada');
     return NextResponse.json(
       { error: 'Serviço de IA temporariamente indisponível' },
       { status: 503 }
@@ -261,7 +262,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    generatedJson = response.text.trim();
+    generatedJson = (response.text || '').trim();
 
     // Limpar markdown se presente
     if (generatedJson.startsWith('```json')) {
@@ -270,7 +271,7 @@ export async function POST(req: NextRequest) {
       generatedJson = generatedJson.substring(3, generatedJson.length - 3).trim();
     }
   } catch (error) {
-    logError(error instanceof Error ? error : new Error('Erro ao chamar Google Gemini'));
+    logger.error('Erro ao chamar Google Gemini', { error });
     aiError = error instanceof Error ? error.message : 'Erro desconhecido';
 
     // Salvar erro no banco
@@ -354,6 +355,12 @@ export async function POST(req: NextRequest) {
   }
 
   // 9. Validar referências (telas, tabelas)
+  if (!validation.data) {
+    return NextResponse.json(
+      { error: 'Dados de validação inválidos' },
+      { status: 500 }
+    );
+  }
   const refValidation = validateReferences(validation.data);
   const warnings: string[] = [];
 
