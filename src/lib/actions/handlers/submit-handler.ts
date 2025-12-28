@@ -89,7 +89,7 @@ export function handleSubmit(
         }
       })
       .catch((error) => {
-        logError(error instanceof Error ? error : new Error('API Error'));
+        logger.error('API Error:', error);
 
         // Execute error action
         if (action.onError) {

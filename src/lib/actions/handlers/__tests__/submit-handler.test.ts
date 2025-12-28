@@ -35,8 +35,9 @@ describe('Submit Handler', () => {
           users: [{ id: '1', name: 'Existing User' }],
         },
         setCurrentDbData: mockSetCurrentDbData,
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -80,8 +81,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: mockSetCurrentDbData,
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -112,7 +114,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -148,8 +151,9 @@ describe('Submit Handler', () => {
         setFormState: mockSetFormState,
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -185,8 +189,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: mockSetCurrentDbData,
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -224,7 +229,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -264,7 +270,8 @@ describe('Submit Handler', () => {
         setFormState: mockSetFormState,
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -321,8 +328,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -361,8 +369,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -415,7 +424,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -455,7 +465,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -500,8 +511,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -543,7 +555,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -579,8 +592,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const putAction: Extract<UIAction, { type: 'submit' }> = {
@@ -640,7 +654,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -704,7 +719,8 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
+        setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
 
@@ -738,8 +754,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -776,8 +793,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -807,8 +825,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -845,8 +864,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -894,8 +914,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -933,8 +954,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       // PATCH não está no tipo, mas vamos testar o comportamento
@@ -980,8 +1002,9 @@ describe('Submit Handler', () => {
         setFormState: mockSetFormState,
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -1025,8 +1048,9 @@ describe('Submit Handler', () => {
         setFormState: mockSetFormState,
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -1069,8 +1093,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action1: Extract<UIAction, { type: 'submit' }> = {
@@ -1121,8 +1146,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -1161,8 +1187,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -1185,8 +1212,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {
@@ -1211,8 +1239,9 @@ describe('Submit Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: mockSetCurrentDbData,
-        databaseData: null,
         handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'submit' }> = {

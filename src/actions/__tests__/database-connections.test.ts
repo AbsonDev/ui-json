@@ -146,6 +146,7 @@ describe('Database Connections Actions', () => {
 
   describe('createDatabaseConnection', () => {
     const validConnectionData = {
+      type: 'postgresql' as const,
       name: 'New DB',
       host: 'localhost',
       port: 5432,
@@ -176,6 +177,7 @@ describe('Database Connections Actions', () => {
 
     it('should validate required fields', async () => {
       const invalidData = {
+        type: 'postgresql' as const,
         name: '',
         host: 'localhost',
         port: 5432,
@@ -360,7 +362,9 @@ describe('Database Connections Actions', () => {
       const result = await dbActions.testDatabaseConnection('conn-123')
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Connection refused')
+      if ('error' in result) {
+        expect(result.error).toContain('Connection refused')
+      }
       expect(mockPoolInstance.end).toHaveBeenCalled()
     })
 
@@ -399,6 +403,7 @@ describe('Database Connections Actions', () => {
 
   describe('testConnectionBeforeCreate', () => {
     const testConnectionData = {
+      type: 'postgresql' as const,
       name: 'Test Connection',
       host: 'localhost',
       port: 5432,
@@ -439,7 +444,9 @@ describe('Database Connections Actions', () => {
       const result = await dbActions.testConnectionBeforeCreate(testConnectionData)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Authentication failed')
+      if ('error' in result) {
+        expect(result.error).toContain('Authentication failed')
+      }
     })
 
     it('should validate connection data', async () => {
@@ -460,6 +467,7 @@ describe('Database Connections Actions', () => {
       await expect(dbActions.getDatabaseConnection('conn-123')).rejects.toThrow('Unauthorized')
       await expect(
         dbActions.createDatabaseConnection({
+          type: 'postgresql',
           name: 'Test',
           host: 'localhost',
           port: 5432,

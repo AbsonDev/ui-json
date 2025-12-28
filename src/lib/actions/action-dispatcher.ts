@@ -39,6 +39,14 @@ const actionHandlers: Record<UIAction['type'], ActionHandler<any>> = {
   'auth:signup': handleAuthSignup,
   'auth:logout': handleAuthLogout,
   ai: handleAI,
+  openUrl: (action) => {
+    if ('url' in action && action.url) {
+      window.open(action.url, '_blank');
+    }
+  },
+  setValue: (action) => {
+    logger.warn('setValue action not yet implemented', { action });
+  },
 };
 
 /**

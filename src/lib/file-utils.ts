@@ -9,7 +9,7 @@ import sharp from 'sharp';
  * Validate file mime type
  */
 export function isValidMimeType(mimeType: string): boolean {
-  return FILE_UPLOAD_CONFIG.ALLOWED_MIME_TYPES.includes(mimeType);
+  return (FILE_UPLOAD_CONFIG.ALLOWED_MIME_TYPES as readonly string[]).includes(mimeType);
 }
 
 /**

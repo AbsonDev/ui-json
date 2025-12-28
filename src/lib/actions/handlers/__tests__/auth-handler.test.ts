@@ -21,6 +21,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -41,7 +43,7 @@ describe('Auth Handler', () => {
           ],
         },
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: mockSetSession,
         handleAction: jest.fn(),
       };
@@ -73,6 +75,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -93,7 +97,7 @@ describe('Auth Handler', () => {
           ],
         },
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
@@ -133,7 +137,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: jest.fn(),
       };
@@ -162,6 +166,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -178,7 +184,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
@@ -207,6 +213,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -225,7 +233,7 @@ describe('Auth Handler', () => {
           users: [{ id: '1', email: 'user@example.com', password: 'password123' }],
         },
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: jest.fn(),
       };
@@ -260,6 +268,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -279,7 +289,7 @@ describe('Auth Handler', () => {
           users: [],
         },
         setCurrentDbData: mockSetCurrentDbData,
-        databaseData: null,
+        session: null,
         setSession: mockSetSession,
         handleAction: jest.fn(),
       };
@@ -325,6 +335,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -345,7 +357,7 @@ describe('Auth Handler', () => {
           ],
         },
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: mockHandleAction,
       };
@@ -386,7 +398,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: jest.fn(),
       };
@@ -414,6 +426,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -431,7 +445,7 @@ describe('Auth Handler', () => {
           users: [{ id: '1', email: 'existing@example.com' }],
         },
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: jest.fn(),
       };
@@ -460,6 +474,8 @@ describe('Auth Handler', () => {
             name: 'Test App',
             theme: { primaryColor: '#000', backgroundColor: '#fff' },
             authentication: {
+              enabled: true,
+              authRedirectScreen: 'login',
               userTable: 'users',
               emailField: 'email',
               passwordField: 'password',
@@ -476,7 +492,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: mockSetCurrentDbData,
-        databaseData: null,
+        session: null,
         setSession: jest.fn(),
         handleAction: jest.fn(),
       };
@@ -517,7 +533,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: mockSetSession,
         handleAction: mockHandleAction,
       };
@@ -556,7 +572,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: mockSetSession,
         handleAction: jest.fn(),
       };
@@ -583,7 +599,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: mockSetSession,
         handleAction: jest.fn(),
       };
@@ -608,7 +624,7 @@ describe('Auth Handler', () => {
         setFormState: jest.fn(),
         currentDbData: {},
         setCurrentDbData: jest.fn(),
-        databaseData: null,
+        session: null,
         setSession: mockSetSession,
         handleAction: jest.fn(),
       };

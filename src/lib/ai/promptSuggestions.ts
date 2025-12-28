@@ -153,7 +153,8 @@ export function getContextualTips(jsonString: string): string[] {
     const json: UIJson = JSON.parse(jsonString);
 
     // Dica sobre design tokens
-    if (!json.app?.designTokens || Object.keys(json.app.designTokens || {}).length === 0) {
+    const designTokens = (json.app as any)?.designTokens;
+    if (!designTokens || Object.keys(designTokens || {}).length === 0) {
       tips.push("💡 Use design tokens para manter cores e espaçamentos consistentes");
     }
 

@@ -37,9 +37,10 @@ import { auth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import { logError } from '@/lib/logger';
+import { Session } from 'next-auth';
 
-const mockAuth = auth as jest.MockedFunction<typeof auth>;
-const mockStripe = stripe as jest.Mocked<typeof stripe>;
+const mockAuth = auth as unknown as jest.MockedFunction<() => Promise<Session | null>>;
+const mockStripeCreate = stripe.billingPortal.sessions.create as jest.MockedFunction<typeof stripe.billingPortal.sessions.create>;
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockLogError = logError as jest.MockedFunction<typeof logError>;
 
@@ -128,7 +129,7 @@ describe('POST /api/billing-portal', () => {
         stripeCustomerId: 'cus_123',
       } as any);
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         url: 'https://billing.stripe.com/session/123',
       } as any);
 
@@ -154,14 +155,14 @@ describe('POST /api/billing-portal', () => {
     });
 
     it('should create billing portal session with correct parameters', async () => {
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         id: 'bps_123',
         url: 'https://billing.stripe.com/session/123',
       } as any);
 
       await POST(mockRequest);
 
-      expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith({
+      expect(mockStripeCreate).toHaveBeenCalledWith({
         customer: 'cus_stripe_123',
         return_url: 'http://localhost:3000/dashboard/settings/billing',
       });
@@ -170,7 +171,7 @@ describe('POST /api/billing-portal', () => {
     it('should return portal session URL on success', async () => {
       const mockPortalUrl = 'https://billing.stripe.com/session/abc123';
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         id: 'bps_123',
         url: mockPortalUrl,
       } as any);
@@ -185,13 +186,13 @@ describe('POST /api/billing-portal', () => {
     it('should use NEXTAUTH_URL from environment for return URL', async () => {
       process.env.NEXTAUTH_URL = 'https://myapp.com';
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         url: 'https://billing.stripe.com/session/123',
       } as any);
 
       await POST(mockRequest);
 
-      expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith(
+      expect(mockStripeCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           return_url: 'https://myapp.com/dashboard/settings/billing',
         })
@@ -204,13 +205,13 @@ describe('POST /api/billing-portal', () => {
         stripeCustomerId: 'cus_different_id',
       } as any);
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         url: 'https://billing.stripe.com/session/123',
       } as any);
 
       await POST(mockRequest);
 
-      expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith(
+      expect(mockStripeCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           customer: 'cus_different_id',
         })
@@ -232,7 +233,7 @@ describe('POST /api/billing-portal', () => {
 
     it('should return 500 when Stripe API fails', async () => {
       const stripeError = new Error('Stripe API error');
-      mockStripe.billingPortal.sessions.create.mockRejectedValue(stripeError);
+      mockStripeCreate.mockRejectedValue(stripeError);
 
       const response = await POST(mockRequest);
       const data = await response.json();
@@ -243,7 +244,7 @@ describe('POST /api/billing-portal', () => {
 
     it('should log error when Stripe API fails', async () => {
       const stripeError = new Error('Stripe connection failed');
-      mockStripe.billingPortal.sessions.create.mockRejectedValue(stripeError);
+      mockStripeCreate.mockRejectedValue(stripeError);
 
       await POST(mockRequest);
 
@@ -270,7 +271,7 @@ describe('POST /api/billing-portal', () => {
     });
 
     it('should handle non-Error exceptions', async () => {
-      mockStripe.billingPortal.sessions.create.mockRejectedValue('String error');
+      mockStripeCreate.mockRejectedValue('String error');
 
       const response = await POST(mockRequest);
       const data = await response.json();
@@ -308,7 +309,7 @@ describe('POST /api/billing-portal', () => {
         stripeCustomerId: 'cus_premium_user',
       } as any);
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         id: 'bps_456',
         url: 'https://billing.stripe.com/session/premium',
       } as any);
@@ -324,7 +325,7 @@ describe('POST /api/billing-portal', () => {
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-456' },
       });
-      expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith({
+      expect(mockStripeCreate).toHaveBeenCalledWith({
         customer: 'cus_premium_user',
         return_url: 'http://localhost:3000/dashboard/settings/billing',
       });
@@ -342,7 +343,7 @@ describe('POST /api/billing-portal', () => {
 
       await POST(mockRequest);
 
-      expect(mockStripe.billingPortal.sessions.create).not.toHaveBeenCalled();
+      expect(mockStripeCreate).not.toHaveBeenCalled();
     });
 
     it('should not query database when not authenticated', async () => {
@@ -351,7 +352,7 @@ describe('POST /api/billing-portal', () => {
       await POST(mockRequest);
 
       expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
-      expect(mockStripe.billingPortal.sessions.create).not.toHaveBeenCalled();
+      expect(mockStripeCreate).not.toHaveBeenCalled();
     });
   });
 
@@ -385,13 +386,13 @@ describe('POST /api/billing-portal', () => {
         stripeCustomerId: 'cus_123',
       } as any);
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         url: 'https://billing.stripe.com/session/123',
       } as any);
 
       await POST(mockRequest);
 
-      expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith(
+      expect(mockStripeCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           return_url: 'undefined/dashboard/settings/billing',
         })
@@ -413,13 +414,13 @@ describe('POST /api/billing-portal', () => {
         stripeCustomerId: longCustomerId,
       } as any);
 
-      mockStripe.billingPortal.sessions.create.mockResolvedValue({
+      mockStripeCreate.mockResolvedValue({
         url: 'https://billing.stripe.com/session/123',
       } as any);
 
       await POST(mockRequest);
 
-      expect(mockStripe.billingPortal.sessions.create).toHaveBeenCalledWith(
+      expect(mockStripeCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           customer: longCustomerId,
         })

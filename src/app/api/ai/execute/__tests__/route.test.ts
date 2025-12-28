@@ -4,12 +4,13 @@
 
 import { NextRequest } from 'next/server';
 import { POST, GET } from '../route';
-import { getServerSession } from 'next-auth';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
+import { Session } from 'next-auth';
 
 // Mocks
-jest.mock('next-auth');
+jest.mock('@/lib/auth');
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     app: {
@@ -48,7 +49,7 @@ jest.mock('@google/genai', () => ({
   })),
 }));
 
-const mockedGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+const mockedAuth = auth as unknown as jest.MockedFunction<() => Promise<Session | null>>;
 const mockedPrisma = prisma as any;
 
 describe('POST /api/ai/execute', () => {
@@ -105,7 +106,7 @@ describe('POST /api/ai/execute', () => {
   });
 
   it('should return 403 if app is private and user not owner', async () => {
-    mockedGetServerSession.mockResolvedValueOnce({
+    mockedAuth.mockResolvedValueOnce({
       user: { email: 'other@example.com' },
     } as any);
 
@@ -316,7 +317,7 @@ describe('GET /api/ai/execute', () => {
   });
 
   it('should return 401 if not authenticated', async () => {
-    mockedGetServerSession.mockResolvedValueOnce(null);
+    mockedAuth.mockResolvedValueOnce(null);
 
     const request = new NextRequest('http://localhost/api/ai/execute');
     const response = await GET(request);
@@ -327,7 +328,7 @@ describe('GET /api/ai/execute', () => {
   });
 
   it('should return 404 if user not found', async () => {
-    mockedGetServerSession.mockResolvedValueOnce({
+    mockedAuth.mockResolvedValueOnce({
       user: { email: 'test@example.com' },
     } as any);
 
@@ -342,7 +343,7 @@ describe('GET /api/ai/execute', () => {
   });
 
   it('should return current limits for authenticated user', async () => {
-    mockedGetServerSession.mockResolvedValueOnce({
+    mockedAuth.mockResolvedValueOnce({
       user: { email: 'test@example.com' },
     } as any);
 

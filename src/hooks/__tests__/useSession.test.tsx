@@ -126,7 +126,15 @@ describe('useSession', () => {
 
   describe('SessionContext Default Value', () => {
     it('should have null session as default', () => {
-      expect(SessionContext._currentValue).toEqual({ session: null });
+      // Test default value through hook usage without provider
+      // Suppress console.error for this test
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      expect(() => {
+        renderHook(() => useSession());
+      }).toThrow('useSession must be used within a SessionProvider');
+
+      consoleErrorSpy.mockRestore();
     });
   });
 

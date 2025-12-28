@@ -4,12 +4,8 @@
  */
 
 // Mock dependencies BEFORE imports
-jest.mock('next-auth', () => ({
-  getServerSession: jest.fn(),
-}));
-
-jest.mock('../../auth/[...nextauth]/route', () => ({
-  authOptions: {},
+jest.mock('@/lib/auth', () => ({
+  auth: jest.fn(),
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -25,11 +21,12 @@ jest.mock('@/lib/prisma', () => ({
 
 // Now import after mocks
 import { GET } from '../route';
-import { getServerSession } from 'next-auth';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Session } from 'next-auth';
 
-const mockGetServerSession = getServerSession as jest.MockedFunction<
-  typeof getServerSession
+const mockAuth = auth as unknown as jest.MockedFunction<
+  () => Promise<Session | null>
 >;
 const mockFindUnique = prisma.user.findUnique as jest.MockedFunction<
   typeof prisma.user.findUnique
@@ -44,7 +41,7 @@ describe('GET /api/invoices', () => {
   });
 
   it('should return 401 when user is not authenticated', async () => {
-    mockGetServerSession.mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const response = await GET();
     const data = await response.json();
@@ -54,8 +51,8 @@ describe('GET /api/invoices', () => {
   });
 
   it('should return 401 when session has no email', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: {},
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-id', isAdmin: false } as any,
       expires: new Date().toISOString(),
     });
 
@@ -67,8 +64,8 @@ describe('GET /api/invoices', () => {
   });
 
   it('should return 404 when user not found', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue(null);
@@ -81,8 +78,8 @@ describe('GET /api/invoices', () => {
   });
 
   it('should return empty array when user has no invoices', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -136,8 +133,8 @@ describe('GET /api/invoices', () => {
       },
     ];
 
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -169,8 +166,8 @@ describe('GET /api/invoices', () => {
   });
 
   it('should limit to last 12 invoices', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -225,8 +222,8 @@ describe('GET /api/invoices', () => {
       },
     ];
 
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -280,8 +277,8 @@ describe('GET /api/invoices', () => {
       },
     ];
 
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -335,8 +332,8 @@ describe('GET /api/invoices', () => {
       },
     ];
 
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -378,8 +375,8 @@ describe('GET /api/invoices', () => {
       },
     ];
 
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
@@ -414,8 +411,8 @@ describe('GET /api/invoices', () => {
   });
 
   it('should return 500 when database query fails', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockRejectedValue(new Error('Database error'));
@@ -453,8 +450,8 @@ describe('GET /api/invoices', () => {
       },
     ];
 
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'test@example.com' },
+    mockAuth.mockResolvedValue({
+      user: { id: 'user-123', email: 'test@example.com', isAdmin: false },
       expires: new Date().toISOString(),
     });
     mockFindUnique.mockResolvedValue({
