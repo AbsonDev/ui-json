@@ -12,8 +12,9 @@ import type { UpdateProfileRequest } from '@/types';
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  await params;
   try {
     const authHeader = request.headers.get('authorization');
     const token = extractTokenFromHeader(authHeader);

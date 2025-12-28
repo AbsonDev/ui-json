@@ -8,11 +8,12 @@ import type { RegisterRequest } from '@/types';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  const { appId } = await params;
   try {
     const body: RegisterRequest = await request.json();
-    const result = await registerAppUser(params.appId, body);
+    const result = await registerAppUser(appId, body);
 
     if (!result.success) {
       return NextResponse.json(

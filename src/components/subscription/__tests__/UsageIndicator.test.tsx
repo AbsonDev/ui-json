@@ -22,11 +22,13 @@ jest.mock('@/hooks/useAnalytics', () => ({
 }));
 
 jest.mock('next/link', () => {
-  return ({ children, href, onClick }: any) => (
+  const MockLink = ({ children, href, onClick }: any) => (
     <a href={href} onClick={onClick}>
       {children}
     </a>
   );
+  MockLink.displayName = 'Link';
+  return MockLink;
 });
 
 jest.mock('lucide-react', () => ({

@@ -8,10 +8,11 @@ import type { CreateEntityRequest } from '@/types';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  const { appId } = await params;
   try {
-    const result = await getEntities(params.appId);
+    const result = await getEntities(appId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -38,11 +39,12 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  const { appId } = await params;
   try {
     const body: CreateEntityRequest = await request.json();
-    const result = await createEntity(params.appId, body);
+    const result = await createEntity(appId, body);
 
     if (!result.success) {
       return NextResponse.json(

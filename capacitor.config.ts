@@ -19,10 +19,6 @@ const config: CapacitorConfig = {
   },
   ios: {
     scheme: 'UI JSON Visualizer',
-    buildOptions: {
-      developmentTeam: undefined, // Configurar com o Team ID da Apple
-      provisioningProfile: undefined, // Configurar com o Provisioning Profile
-    },
   },
 };
 

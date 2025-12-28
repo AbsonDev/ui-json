@@ -19,8 +19,9 @@ const downloadRateLimiter = {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const startTime = Date.now();
   const clientId = getClientIdentifier(request);
 
@@ -30,13 +31,13 @@ export async function GET(
     if (!rateLimitResult.success) {
       logger.warn('Rate limit exceeded for download', {
         clientId,
-        buildId: params.id,
+        buildId: id,
         resetAt: new Date(rateLimitResult.resetAt).toISOString()
       });
       return createRateLimitResponse(rateLimitResult.resetAt);
     }
 
-    const buildId = params.id;
+    const buildId = id;
     logApiRequest('GET', `/api/builds/${buildId}/download`, clientId);
     const buildsDir = path.join(process.cwd(), 'builds', 'downloads');
 
@@ -94,12 +95,12 @@ export async function GET(
 
   } catch (error) {
     logError(error instanceof Error ? error : new Error('Download failed'), {
-      buildId: params.id,
+      buildId: id,
       clientId
     });
 
     const duration = Date.now() - startTime;
-    logApiResponse('GET', `/api/builds/${params.id}/download`, 500, duration);
+    logApiResponse('GET', `/api/builds/${id}/download`, 500, duration);
 
     return NextResponse.json(
       { error: 'Download failed' },

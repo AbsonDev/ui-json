@@ -17,12 +17,13 @@ import type { UpdateEntityDataRequest } from '@/types';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string; recordId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string; recordId: string }> }
 ) {
+  const { recordId } = await params;
   try {
     // Note: getEntityDataById doesn't filter by user, it's for admin access
     // For user-specific access control, use the list endpoint with filters
-    const result = await getEntityDataById(params.recordId);
+    const result = await getEntityDataById(recordId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -50,8 +51,9 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string; recordId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string; recordId: string }> }
 ) {
+  const { recordId } = await params;
   try {
     const body: UpdateEntityDataRequest = await request.json();
 
@@ -59,7 +61,7 @@ export async function PUT(
     const authContext = await getOptionalAuthContext(request);
     const appUserId = authContext?.userId;
 
-    const result = await updateEntityData(params.recordId, body, appUserId);
+    const result = await updateEntityData(recordId, body, appUserId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -93,8 +95,9 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string; recordId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string; recordId: string }> }
 ) {
+  const { recordId } = await params;
   try {
     const searchParams = request.nextUrl.searchParams;
     const hardDelete = searchParams.get('hard') === 'true';
@@ -103,7 +106,7 @@ export async function DELETE(
     const authContext = await getOptionalAuthContext(request);
     const appUserId = authContext?.userId;
 
-    const result = await deleteEntityData(params.recordId, hardDelete, appUserId);
+    const result = await deleteEntityData(recordId, hardDelete, appUserId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -136,8 +139,9 @@ export async function DELETE(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { appId: string; entityId: string; recordId: string } }
+  { params }: { params: Promise<{ appId: string; entityId: string; recordId: string }> }
 ) {
+  const { recordId } = await params;
   try {
     const body = await request.json();
 
@@ -146,7 +150,7 @@ export async function PATCH(
       const authContext = await getOptionalAuthContext(request);
       const appUserId = authContext?.userId;
 
-      const result = await restoreEntityData(params.recordId, appUserId);
+      const result = await restoreEntityData(recordId, appUserId);
 
       if (!result.success) {
         return NextResponse.json(

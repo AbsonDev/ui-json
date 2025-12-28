@@ -34,12 +34,14 @@ export function init() {
 
     // Remove sensitive query parameters
     if (event.request?.query_string) {
-      const sensitiveParams = ['password', 'token', 'api_key', 'secret'];
-      sensitiveParams.forEach(param => {
-        if (event.request?.query_string?.includes(param)) {
+      const queryString = event.request.query_string;
+      if (typeof queryString === 'string') {
+        const sensitiveParams = ['password', 'token', 'api_key', 'secret'];
+        const hasParam = sensitiveParams.some(param => queryString.includes(param));
+        if (hasParam) {
           event.request.query_string = '[REDACTED]';
         }
-      });
+      }
     }
 
     return event;

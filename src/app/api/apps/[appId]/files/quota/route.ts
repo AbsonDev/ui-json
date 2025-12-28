@@ -11,8 +11,9 @@ import { authenticateAppUser } from '@/lib/auth-middleware';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
+  const { appId } = await params;
   try {
     // Authenticate app user (required for quota check)
     const auth = await authenticateAppUser(request);
@@ -26,7 +27,7 @@ export async function GET(
     const { context } = auth;
 
     // Get quota
-    const result = await getFileQuota(params.appId, context.userId);
+    const result = await getFileQuota(appId, context.userId);
 
     if (!result.success) {
       return NextResponse.json(

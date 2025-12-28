@@ -8,11 +8,12 @@ import type { LoginRequest } from '@/types';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { appId: string } }
+  { params }: { params: Promise<{ appId: string }> }
 ) {
   try {
+    const { appId } = await params;
     const body: LoginRequest = await request.json();
-    const result = await loginAppUser(params.appId, body);
+    const result = await loginAppUser(appId, body);
 
     if (!result.success) {
       return NextResponse.json(

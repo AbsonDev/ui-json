@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 import { GoogleGenAI } from '@google/genai';
@@ -185,7 +184,7 @@ export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
   // 1. Autenticação
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.email) {
     return NextResponse.json(
       { error: 'Não autorizado. Faça login para usar a IA.' },
@@ -409,7 +408,7 @@ export async function POST(req: NextRequest) {
  * Retorna limites de uso de AI do usuário
  */
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });

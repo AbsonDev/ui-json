@@ -13,7 +13,7 @@ import { FlowBuilder } from '@/components/FlowBuilder'
 import { Snippets } from '@/components/Snippets'
 import EntityManager from '@/components/EntityManager'
 import DataManager from '@/components/DataManager'
-import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Server } from 'lucide-react'
+import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Server, Sparkles, Globe, Eye } from 'lucide-react'
 import type { EntityResponse } from '@/types'
 import { TemplatesGallery } from '@/components/TemplatesGallery'
 import { OnboardingWizard, useOnboarding } from '@/components/OnboardingWizard'
@@ -21,7 +21,6 @@ import { ExportShareButton } from '@/components/ExportShare'
 import { VersionHistoryButton, useVersionHistory } from '@/components/VersionHistory'
 import { CommandPalette } from '@/components/CommandPalette'
 import { PublishDialog } from '@/components/PublishDialog'
-import { Wand2, PlusCircle, FilePenLine, Trash2, Database, Workflow, Library, LogOut, Settings, Sparkles, Globe, Eye } from 'lucide-react'
 import { useApps } from '@/hooks/useApps'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
@@ -33,9 +32,9 @@ import { SkeletonCard, SkeletonList, SkeletonText } from '@/components/Skeleton'
 import { toast } from 'sonner'
 import { KeyboardShortcutsOverlay } from '@/components/KeyboardShortcuts'
 import { FloatingShapes } from '@/components/GradientBackground'
+import { DesignTokensContext } from '@/contexts/DesignTokensContext'
 
-// --- Context for Design Tokens ---
-export const DesignTokensContext = createContext<Record<string, any>>({})
+// ---
 const resolveToken = (value: any, tokens: Record<string, any>): any => {
     if (typeof value === 'string' && value.startsWith('$')) {
         const tokenName = value.substring(1)
@@ -139,8 +138,7 @@ export default function DashboardPage() {
   const [currentScreenId, setCurrentScreenId] = useState<string | null>(null)
   const [formState, setFormState] = useState<Record<string, any>>({})
   const [popup, setPopup] = useState<{ title?: string; message: string; variant: 'alert' | 'info' | 'confirm', buttons?: any[] } | null>(null)
-  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'backend'>('editor')
-  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'templates'>('editor')
+  const [activeTab, setActiveTab] = useState<'editor' | 'ai' | 'database' | 'flow' | 'snippets' | 'backend' | 'templates'>('editor')
   const [dialog, setDialog] = useState<DialogProps['config'] | null>(null)
   const [showPublishDialog, setShowPublishDialog] = useState(false)
   const [databaseData, setDatabaseData] = useState<Record<string, any>>({})

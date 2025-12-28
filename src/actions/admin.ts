@@ -116,7 +116,7 @@ export async function getPlatformStats() {
 
   // Group by day
   const appsByDay: Record<string, number> = {}
-  recentApps.forEach((app) => {
+  recentApps.forEach((app: { createdAt: Date }) => {
     const day = app.createdAt.toISOString().split('T')[0]
     appsByDay[day] = (appsByDay[day] || 0) + 1
   })

@@ -1,4 +1,4 @@
-import { PrismaClient, PlanTier } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -10,7 +10,7 @@ async function main() {
 
   const planConfigs = [
     {
-      planTier: PlanTier.FREE,
+      planTier: 'FREE' as const,
       maxApps: 3,
       maxBuilds: 0,
       maxExports: 5,
@@ -28,7 +28,7 @@ async function main() {
       priceYearly: 0,
     },
     {
-      planTier: PlanTier.PRO,
+      planTier: 'PRO' as const,
       maxApps: -1, // unlimited
       maxBuilds: 10,
       maxExports: -1, // unlimited
@@ -46,7 +46,7 @@ async function main() {
       priceYearly: 19900, // $199.00 (save ~17%)
     },
     {
-      planTier: PlanTier.TEAM,
+      planTier: 'TEAM' as const,
       maxApps: -1,
       maxBuilds: 50,
       maxExports: -1,
@@ -64,7 +64,7 @@ async function main() {
       priceYearly: 49900, // $499.00 per user (save ~17%)
     },
     {
-      planTier: PlanTier.ENTERPRISE,
+      planTier: 'ENTERPRISE' as const,
       maxApps: -1,
       maxBuilds: -1,
       maxExports: -1,

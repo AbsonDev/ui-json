@@ -8,7 +8,7 @@ import { useAction } from '../hooks/useAction';
 import { useDatabase } from '../hooks/useDatabase';
 import { useSession } from '../hooks/useSession';
 import { Renderer } from './Renderer';
-import { DesignTokensContext } from '../App';
+import { DesignTokensContext } from '../contexts/DesignTokensContext';
 
 // Import shared utilities
 import { resolveToken } from '../lib/utils/design-tokens';
