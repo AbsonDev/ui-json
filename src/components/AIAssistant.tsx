@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wand2, AlertCircle, Info, Lightbulb } from 'lucide-react';
 import { getPromptSuggestions, getContextualTips } from '@/lib/ai/promptSuggestions';
+import logger from '@/lib/logger';
 
 interface AILimits {
   current: number;
@@ -76,7 +77,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ jsonString, setJsonStr
         setLimits(data.limits);
       }
     } catch (error) {
-      console.error('Erro ao carregar limites:', error);
+      logger.error('Erro ao carregar limites', { error });
     }
   };
 
@@ -125,7 +126,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ jsonString, setJsonStr
         setCurrentUsageId(data.usageId);
       }
     } catch (error) {
-      console.error('Erro ao chamar API:', error);
+      logger.error('Erro ao chamar API', { error });
       setError('Erro de conexão. Verifique sua internet e tente novamente.');
     } finally {
       setIsGenerating(false);
@@ -153,7 +154,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ jsonString, setJsonStr
             }),
           });
         } catch (error) {
-          console.error('Erro ao enviar feedback:', error);
+          logger.error('Erro ao enviar feedback', { error });
         }
       }
     }
@@ -174,7 +175,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ jsonString, setJsonStr
           }),
         });
       } catch (error) {
-        console.error('Erro ao enviar feedback:', error);
+        logger.error('Erro ao enviar feedback', { error });
       }
     }
 

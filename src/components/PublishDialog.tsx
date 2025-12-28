@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { publishApp, unpublishApp } from '@/actions/apps'
 import { X, Globe, Eye, EyeOff, Copy, Check, ExternalLink } from 'lucide-react'
+import logger from '@/lib/logger'
 
 interface PublishDialogProps {
   app: {
@@ -79,7 +80,7 @@ export const PublishDialog: React.FC<PublishDialogProps> = ({ app, onClose, onPu
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy:', err)
+      logger.error('Failed to copy', { error: err })
     }
   }
 

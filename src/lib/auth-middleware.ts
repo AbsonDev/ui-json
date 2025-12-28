@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { verifyToken, extractTokenFromHeader, type JWTPayload } from './jwt';
 import { prisma } from './prisma';
+import logger from './logger';
 
 export interface AuthContext {
   userId: string;
@@ -133,7 +134,7 @@ export async function authenticateAppUser(
       },
     };
   } catch (error: any) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error', { error });
     return {
       success: false,
       error: 'Authentication failed',

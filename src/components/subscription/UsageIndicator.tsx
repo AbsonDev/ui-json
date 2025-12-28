@@ -5,6 +5,7 @@ import { getUsageMetrics, getUserPlanDetails } from '@/actions/subscriptions'
 import { AlertTriangle, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { useAnalytics } from '@/hooks/useAnalytics'
+import logger from '@/lib/logger'
 
 interface UsageStats {
   apps: { current: number; limit: number; percentage: number }
@@ -29,7 +30,7 @@ export function UsageIndicator() {
         setStats(metrics)
         setPlanTier(planDetails.planTier)
       } catch (error) {
-        console.error('Failed to load usage stats:', error)
+        logger.error('Failed to load usage stats', { error })
       } finally {
         setLoading(false)
       }

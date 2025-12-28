@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Loader2, Bot, AlertCircle } from 'lucide-react';
 import { UIAIChat, UIAIAssistant, UIAIAnalyzer } from '@/types';
+import logger from '@/lib/logger';
 
 interface Message {
   id: string;
@@ -109,7 +110,7 @@ export const RenderAIChat: React.FC<UIAIChat & AIComponentProps> = ({
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      console.error('Erro ao enviar mensagem:', err);
+      logger.error('Erro ao enviar mensagem', { error: err });
     } finally {
       setIsLoading(false);
     }
@@ -265,7 +266,7 @@ export const RenderAIAssistant: React.FC<UIAIAssistant & AIComponentProps> = ({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      console.error('Erro ao executar IA:', err);
+      logger.error('Erro ao executar IA', { error: err });
     } finally {
       setIsLoading(false);
     }
@@ -376,7 +377,7 @@ export const RenderAIAnalyzer: React.FC<UIAIAnalyzer & AIComponentProps> = ({
         }
       }
     } catch (err) {
-      console.error('Erro ao analisar:', err);
+      logger.error('Erro ao analisar', { error: err });
     } finally {
       setIsAnalyzing(false);
     }
