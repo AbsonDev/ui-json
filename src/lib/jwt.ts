@@ -1,6 +1,10 @@
 import { SignJWT, jwtVerify } from 'jose'
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET or NEXTAUTH_SECRET environment variable must be defined')
+}
 
 // Convert secret to Uint8Array
 const secret = new TextEncoder().encode(JWT_SECRET)
@@ -39,7 +43,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
       sessionId: payload.sessionId as string,
     }
   } catch (error) {
-    console.error('JWT verification failed:', error)
+    // Silent fail for invalid tokens (expected behavior)
     return null
   }
 }

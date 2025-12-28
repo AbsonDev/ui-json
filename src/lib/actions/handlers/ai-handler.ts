@@ -3,9 +3,9 @@
  * Handles AI actions (chat, analyze, suggest, classify, generate)
  */
 
-import { UIAction } from '../../../types';
-import { ActionContext } from '../action-context';
-import logger from '../../universal-logger';
+import { UIAction } from '@/types';
+import { ActionContext } from '@/lib/actions/action-context';
+import logger from '@/lib/universal-logger';
 
 export async function handleAI(
   action: Extract<UIAction, { type: 'ai' }>,

@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { encrypt, decrypt } from '@/lib/encryption'
 import { Client } from 'pg'
+import logger from '@/lib/logger'
 
 const createConnectionSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -82,7 +83,7 @@ export async function getDatabaseConnection(id: string) {
       password: decrypt(connection.password),
     }
   } catch (error) {
-    console.error('Failed to decrypt password:', error)
+    logger.error('Failed to decrypt password', { error })
     throw new Error('Failed to decrypt connection credentials')
   }
 }

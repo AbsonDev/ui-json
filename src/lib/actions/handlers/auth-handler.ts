@@ -3,8 +3,8 @@
  * Handles auth:login, auth:signup, and auth:logout actions
  */
 
-import { UIAction } from '../../../types';
-import { ActionContext } from '../action-context';
+import { UIAction } from '@/types';
+import { ActionContext } from '@/lib/actions/action-context';
 
 export function handleAuthLogin(
   action: Extract<UIAction, { type: 'auth:login' }>,

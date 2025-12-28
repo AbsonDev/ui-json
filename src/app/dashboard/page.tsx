@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect, createContext, useRef
 import { UIApp, UIScreen, UIAction, UIComponent } from '@/types'
 import { Renderer } from '@/components/Renderer'
 import { ActionContext } from '@/hooks/useAction'
-import { DatabaseContext } from '@/hooks/useDatabase'
+import { DatabaseContext } from '@/hooks/useDatabaseContext'
 import { SessionContext } from '@/hooks/useSession'
 import { AIAssistant } from '@/components/AIAssistant'
 import { DatabaseEditor } from '@/components/DatabaseEditor'

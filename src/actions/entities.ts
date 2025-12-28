@@ -8,6 +8,7 @@ import type {
   EntityResponse,
 } from '@/types';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 // ============================================
 // Validation Schemas
@@ -130,7 +131,7 @@ export async function getEntities(appId: string) {
       entities: entities.map(formatEntityResponse),
     };
   } catch (error: any) {
-    console.error('Error getting entities:', error);
+    logger.error('Error getting entities', { error });
     return {
       success: false,
       error: error.message || 'Failed to get entities',
@@ -172,7 +173,7 @@ export async function getEntity(entityId: string) {
       entity: formatEntityResponse(entity),
     };
   } catch (error: any) {
-    console.error('Error getting entity:', error);
+    logger.error('Error getting entity', { error });
     return {
       success: false,
       error: error.message || 'Failed to get entity',
@@ -249,7 +250,7 @@ export async function createEntity(appId: string, data: CreateEntityRequest) {
       entity: formatEntityResponse(entity),
     };
   } catch (error: any) {
-    console.error('Error creating entity:', error);
+    logger.error('Error creating entity', { error });
 
     if (error.name === 'ZodError') {
       return {
@@ -332,7 +333,7 @@ export async function updateEntity(entityId: string, data: UpdateEntityRequest) 
       entity: formatEntityResponse(updated),
     };
   } catch (error: any) {
-    console.error('Error updating entity:', error);
+    logger.error('Error updating entity', { error });
 
     if (error.name === 'ZodError') {
       return {
@@ -396,7 +397,7 @@ export async function deleteEntity(entityId: string) {
       message: 'Entity deleted successfully',
     };
   } catch (error: any) {
-    console.error('Error deleting entity:', error);
+    logger.error('Error deleting entity', { error });
     return {
       success: false,
       error: error.message || 'Failed to delete entity',

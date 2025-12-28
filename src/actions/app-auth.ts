@@ -11,6 +11,7 @@ import type {
   UpdateProfileRequest,
   ChangePasswordRequest,
 } from '@/types';
+import logger from '@/lib/logger';
 
 // ============================================
 // Helper Functions
@@ -120,7 +121,7 @@ export async function registerAppUser(appId: string, data: RegisterRequest): Pro
       expiresAt: expiresAt.toISOString(),
     };
   } catch (error: any) {
-    console.error('Error registering app user:', error);
+    logger.error('Error registering app user', { error });
 
     if (error.name === 'ZodError') {
       return {
@@ -207,7 +208,7 @@ export async function loginAppUser(appId: string, data: LoginRequest): Promise<A
       expiresAt: expiresAt.toISOString(),
     };
   } catch (error: any) {
-    console.error('Error logging in app user:', error);
+    logger.error('Error logging in app user', { error });
 
     if (error.name === 'ZodError') {
       return {
@@ -259,7 +260,7 @@ export async function getCurrentAppUser(token: string): Promise<{ success: boole
       user: formatAppUserResponse(session.appUser),
     };
   } catch (error: any) {
-    console.error('Error getting current app user:', error);
+    logger.error('Error getting current app user', { error });
     return {
       success: false,
       error: error.message || 'Failed to get user',
@@ -285,7 +286,7 @@ export async function logoutAppUser(token: string): Promise<{ success: boolean; 
 
     return { success: true };
   } catch (error: any) {
-    console.error('Error logging out app user:', error);
+    logger.error('Error logging out app user', { error });
     return {
       success: false,
       error: error.message || 'Failed to logout',
@@ -328,7 +329,7 @@ export async function updateAppUserProfile(
       user: formatAppUserResponse(user),
     };
   } catch (error: any) {
-    console.error('Error updating app user profile:', error);
+    logger.error('Error updating app user profile', { error });
 
     if (error.name === 'ZodError') {
       return {
@@ -395,7 +396,7 @@ export async function changeAppUserPassword(
 
     return { success: true };
   } catch (error: any) {
-    console.error('Error changing password:', error);
+    logger.error('Error changing password', { error });
 
     if (error.name === 'ZodError') {
       return {
@@ -429,7 +430,7 @@ export async function deleteAppUserAccount(token: string): Promise<{ success: bo
 
     return { success: true };
   } catch (error: any) {
-    console.error('Error deleting app user account:', error);
+    logger.error('Error deleting app user account', { error });
     return {
       success: false,
       error: error.message || 'Failed to delete account',

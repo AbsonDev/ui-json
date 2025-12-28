@@ -3,8 +3,8 @@
  * Handles database record operations
  */
 
-import { UIAction } from '../../../types';
-import { ActionContext } from '../action-context';
+import { UIAction } from '@/types';
+import { ActionContext } from '@/lib/actions/action-context';
 
 export function handleDeleteRecord(
   action: Extract<UIAction, { type: 'deleteRecord' }>,

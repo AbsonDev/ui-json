@@ -10,6 +10,7 @@ import type {
   PaginatedResponse,
   EntityField,
 } from '@/types';
+import logger from '@/lib/logger';
 
 // ============================================
 // Helper Functions
@@ -236,7 +237,7 @@ export async function getEntityData(
       ...response,
     };
   } catch (error: any) {
-    console.error('Error getting entity data:', error);
+    logger.error('Error getting entity data', { error });
     return {
       success: false,
       error: error.message || 'Failed to get entity data',
@@ -279,7 +280,7 @@ export async function getEntityDataById(recordId: string) {
       record: formatEntityDataResponse(record),
     };
   } catch (error: any) {
-    console.error('Error getting entity data by ID:', error);
+    logger.error('Error getting entity data by ID', { error });
     return {
       success: false,
       error: error.message || 'Failed to get record',
@@ -365,7 +366,7 @@ export async function createEntityData(
       record: formatEntityDataResponse(record),
     };
   } catch (error: any) {
-    console.error('Error creating entity data:', error);
+    logger.error('Error creating entity data', { error });
     return {
       success: false,
       error: error.message || 'Failed to create record',
@@ -477,7 +478,7 @@ export async function updateEntityData(
       record: formatEntityDataResponse(updated),
     };
   } catch (error: any) {
-    console.error('Error updating entity data:', error);
+    logger.error('Error updating entity data', { error });
     return {
       success: false,
       error: error.message || 'Failed to update record',
@@ -549,7 +550,7 @@ export async function deleteEntityData(
       deletedType: useSoftDelete ? 'soft' : 'hard',
     };
   } catch (error: any) {
-    console.error('Error deleting entity data:', error);
+    logger.error('Error deleting entity data', { error });
     return {
       success: false,
       error: error.message || 'Failed to delete record',
@@ -610,7 +611,7 @@ export async function restoreEntityData(recordId: string, appUserId?: string) {
       message: 'Record restored successfully',
     };
   } catch (error: any) {
-    console.error('Error restoring entity data:', error);
+    logger.error('Error restoring entity data', { error });
     return {
       success: false,
       error: error.message || 'Failed to restore record',

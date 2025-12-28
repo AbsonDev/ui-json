@@ -3,8 +3,8 @@
  * Handles popup display actions
  */
 
-import { UIAction } from '../../../types';
-import { ActionContext } from '../action-context';
+import { UIAction } from '@/types';
+import { ActionContext } from '@/lib/actions/action-context';
 
 export function handlePopup(
   action: Extract<UIAction, { type: 'popup' }>,

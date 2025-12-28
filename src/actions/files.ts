@@ -13,6 +13,7 @@ import {
   getImageDimensions,
   generateThumbnail,
 } from '@/lib/file-utils';
+import logger from '@/lib/logger';
 import type {
   FileResponse,
   UploadFileResponse,
@@ -189,7 +190,7 @@ export async function uploadFile(
       file: formatFileResponse(fileRecord),
     };
   } catch (error: any) {
-    console.error('Error uploading file:', error);
+    logger.error('Error uploading file', { error });
     return {
       success: false,
       error: error.message || 'Failed to upload file',
@@ -254,7 +255,7 @@ export async function getFiles(appId: string, query?: ListFilesRequest, appUserI
       },
     };
   } catch (error: any) {
-    console.error('Error getting files:', error);
+    logger.error('Error getting files', { error });
     return {
       success: false,
       error: error.message || 'Failed to get files',
@@ -293,7 +294,7 @@ export async function getFile(fileId: string) {
       file: formatFileResponse(file),
     };
   } catch (error: any) {
-    console.error('Error getting file:', error);
+    logger.error('Error getting file', { error });
     return {
       success: false,
       error: error.message || 'Failed to get file',
@@ -341,7 +342,7 @@ export async function deleteFile(fileId: string, appUserId?: string) {
         await deleteFileFromStorage(file.thumbnailPath);
       }
     } catch (storageError) {
-      console.error('Error deleting file from storage:', storageError);
+      logger.error('Error deleting file from storage', { error: storageError });
       // Continue with database deletion even if storage deletion fails
     }
 
@@ -355,7 +356,7 @@ export async function deleteFile(fileId: string, appUserId?: string) {
       message: 'File deleted successfully',
     };
   } catch (error: any) {
-    console.error('Error deleting file:', error);
+    logger.error('Error deleting file', { error });
     return {
       success: false,
       error: error.message || 'Failed to delete file',
@@ -402,7 +403,7 @@ export async function getFileQuota(appId: string, appUserId: string): Promise<Fi
       quota,
     };
   } catch (error: any) {
-    console.error('Error getting file quota:', error);
+    logger.error('Error getting file quota', { error });
     return {
       success: false,
       error: error.message || 'Failed to get quota',

@@ -3,8 +3,8 @@
  * Handles navigate and goBack actions
  */
 
-import { UIAction } from '../../../types';
-import { ActionContext } from '../action-context';
+import { UIAction } from '@/types';
+import { ActionContext } from '@/lib/actions/action-context';
 
 export function handleNavigate(
   action: Extract<UIAction, { type: 'navigate' }>,

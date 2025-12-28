@@ -9,10 +9,10 @@ export const DatabaseContext = React.createContext<IDatabaseContext>({
   data: null,
 });
 
-export const useDatabase = (): IDatabaseContext => {
+export const useDatabaseContext = (): IDatabaseContext => {
   const context = React.useContext(DatabaseContext);
   if (context === undefined) {
-    throw new Error('useDatabase must be used within a DatabaseProvider');
+    throw new Error('useDatabaseContext must be used within a DatabaseProvider');
   }
   return context;
 };
