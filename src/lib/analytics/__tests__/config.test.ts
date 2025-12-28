@@ -32,7 +32,7 @@ describe('Analytics Config', () => {
   describe('initAnalytics', () => {
     it('should initialize mixpanel when token is provided', () => {
       process.env.NEXT_PUBLIC_MIXPANEL_TOKEN = 'test-token-123';
-      process.env.NODE_ENV = 'production';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
 
       // Re-import to get new env values
       jest.resetModules();
@@ -50,7 +50,7 @@ describe('Analytics Config', () => {
 
     it('should enable debug mode in development', () => {
       process.env.NEXT_PUBLIC_MIXPANEL_TOKEN = 'test-token';
-      process.env.NODE_ENV = 'development';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
 
       jest.resetModules();
       const { initAnalytics } = require('../config');
@@ -92,7 +92,7 @@ describe('Analytics Config', () => {
   describe('trackEvent', () => {
     beforeEach(() => {
       process.env.NEXT_PUBLIC_MIXPANEL_TOKEN = 'test-token';
-      process.env.NODE_ENV = 'test';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
       jest.resetModules();
     });
 

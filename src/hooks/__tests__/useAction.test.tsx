@@ -127,7 +127,7 @@ describe('useAction', () => {
 
       const { result } = renderHook(() => useAction(), { wrapper });
 
-      const testAction = { type: 'NAVIGATE', payload: { screen: 'home' } };
+      const testAction = { type: 'navigate' as const, target: 'home' };
       result.current.handleAction(testAction);
 
       expect(mockHandleAction).toHaveBeenCalledWith(testAction);
@@ -152,9 +152,9 @@ describe('useAction', () => {
       const { result } = renderHook(() => useAction(), { wrapper });
 
       const actions = [
-        { type: 'NAVIGATE', payload: { screen: 'home' } },
-        { type: 'SUBMIT', payload: { form: 'login' } },
-        { type: 'OPEN_POPUP', payload: { message: 'Hello' } },
+        { type: 'navigate' as const, target: 'home' },
+        { type: 'submit' as const, target: 'database' as const, table: 'users', fields: {} },
+        { type: 'popup' as const, title: 'Hello', message: 'World' },
       ];
 
       actions.forEach((action) => {
@@ -290,8 +290,15 @@ describe('useAction', () => {
   });
 
   describe('ActionContext Default Value', () => {
-    it('should have null as default value', () => {
-      expect(ActionContext._currentValue).toBeNull();
+    it('should throw error when used without provider', () => {
+      // Suppress console.error for this test
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      expect(() => {
+        renderHook(() => useAction());
+      }).toThrow('useAction must be used within an ActionProvider');
+
+      consoleErrorSpy.mockRestore();
     });
   });
 

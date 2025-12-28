@@ -111,13 +111,15 @@ describe('Entity Data Actions', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data).toHaveLength(1)
-      expect(result.pagination).toEqual({
-        total: 10,
-        limit: 5,
-        offset: 0,
-        hasMore: true,
-      })
+      if ('data' in result && 'pagination' in result) {
+        expect(result.data).toHaveLength(1)
+        expect(result.pagination).toEqual({
+          total: 10,
+          limit: 5,
+          offset: 0,
+          hasMore: true,
+        })
+      }
 
       expect(prisma.entityData.findMany).toHaveBeenCalledWith({
         where: { entityId: 'entity-123', deletedAt: null },

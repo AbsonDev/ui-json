@@ -1,5 +1,11 @@
-import { PlanTier } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+
+// PlanTier enum and type definition (matches Prisma schema)
+export enum PlanTier {
+  FREE = 'FREE',
+  PRO = 'PRO',
+  TEAM = 'TEAM',
+}
 
 export interface PlanLimits {
   maxApps: number

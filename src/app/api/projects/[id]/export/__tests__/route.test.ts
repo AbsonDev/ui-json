@@ -24,7 +24,7 @@ const mockedPrisma = prisma as jest.Mocked<typeof prisma>;
 
 describe('POST /api/projects/[id]/export', () => {
   let mockRequest: NextRequest;
-  const mockParams = { params: { id: 'test-project-123' } };
+  const mockParams = { params: Promise.resolve({ id: 'test-project-123' }) };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -361,7 +361,7 @@ describe('POST /api/projects/[id]/export', () => {
 });
 
 describe('GET /api/projects/[id]/export', () => {
-  const mockParams = { params: { id: 'test-project-123' } };
+  const mockParams = { params: Promise.resolve({ id: 'test-project-123' }) };
 
   beforeEach(() => {
     jest.clearAllMocks();

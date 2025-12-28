@@ -22,7 +22,10 @@ if (ENCRYPTION_KEY.length !== 32) {
 
 // Get the validated encryption key as Buffer
 function getKey(): Buffer {
-  return Buffer.from(ENCRYPTION_KEY, 'utf-8')
+  // Create a hash from the key to ensure exactly 32 bytes
+  const hash = crypto.createHash('sha256')
+  hash.update(ENCRYPTION_KEY!)
+  return hash.digest()
 }
 
 /**

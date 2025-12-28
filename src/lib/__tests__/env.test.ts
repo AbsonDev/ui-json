@@ -8,7 +8,7 @@ describe('Environment Variables', () => {
   beforeEach(() => {
     jest.resetModules();
     // Reset process.env before each test
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv } as any;
   });
 
   afterAll(() => {
@@ -21,7 +21,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'a'.repeat(32);
       process.env.ENCRYPTION_KEY = 'b'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -37,7 +37,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'c'.repeat(32);
       process.env.ENCRYPTION_KEY = 'd'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -49,7 +49,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'https://example.com';
       process.env.NEXTAUTH_SECRET = 'e'.repeat(32);
       process.env.ENCRYPTION_KEY = 'f'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -62,7 +62,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_SECRET = 'g'.repeat(32);
       process.env.ENCRYPTION_KEY = 'h'.repeat(32);
       process.env.GEMINI_API_KEY = 'test-api-key-12345';
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -74,7 +74,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'i'.repeat(32);
       process.env.ENCRYPTION_KEY = 'j'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -86,7 +86,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'k'.repeat(32);
       process.env.ENCRYPTION_KEY = 'l'.repeat(32);
-      delete process.env.NODE_ENV;
+      delete (process.env as any).NODE_ENV;
 
       const { env } = require('../env');
 
@@ -98,7 +98,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'm'.repeat(32);
       process.env.ENCRYPTION_KEY = 'n'.repeat(32);
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const { env } = require('../env');
 
@@ -112,7 +112,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'o'.repeat(32);
       process.env.ENCRYPTION_KEY = 'p'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow();
     });
@@ -122,7 +122,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'q'.repeat(32);
       process.env.ENCRYPTION_KEY = 'r'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('must be a PostgreSQL URL');
     });
@@ -132,7 +132,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 's'.repeat(32);
       process.env.ENCRYPTION_KEY = 't'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow();
     });
@@ -144,7 +144,7 @@ describe('Environment Variables', () => {
       delete process.env.NEXTAUTH_URL;
       process.env.NEXTAUTH_SECRET = 'u'.repeat(32);
       process.env.ENCRYPTION_KEY = 'v'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow();
     });
@@ -154,7 +154,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'not-a-url';
       process.env.NEXTAUTH_SECRET = 'w'.repeat(32);
       process.env.ENCRYPTION_KEY = 'x'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow();
     });
@@ -166,7 +166,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       delete process.env.NEXTAUTH_SECRET;
       process.env.ENCRYPTION_KEY = 'y'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow();
     });
@@ -176,7 +176,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'short';
       process.env.ENCRYPTION_KEY = 'z'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('at least 32 characters');
     });
@@ -186,7 +186,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'a'.repeat(31);
       process.env.ENCRYPTION_KEY = 'b'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('at least 32 characters');
     });
@@ -196,7 +196,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'c'.repeat(32);
       process.env.ENCRYPTION_KEY = 'd'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -208,7 +208,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'e'.repeat(64);
       process.env.ENCRYPTION_KEY = 'f'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -222,7 +222,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'g'.repeat(32);
       delete process.env.ENCRYPTION_KEY;
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow();
     });
@@ -232,7 +232,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'h'.repeat(32);
       process.env.ENCRYPTION_KEY = 'short';
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('exactly 32 characters');
     });
@@ -242,7 +242,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'i'.repeat(32);
       process.env.ENCRYPTION_KEY = 'j'.repeat(31);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('exactly 32 characters');
     });
@@ -252,7 +252,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'k'.repeat(32);
       process.env.ENCRYPTION_KEY = 'l'.repeat(33);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('exactly 32 characters');
     });
@@ -262,7 +262,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'm'.repeat(32);
       process.env.ENCRYPTION_KEY = 'n'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -277,7 +277,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_SECRET = 'o'.repeat(32);
       process.env.ENCRYPTION_KEY = 'p'.repeat(32);
       process.env.GEMINI_API_KEY = 'short';
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       expect(() => require('../env')).toThrow('at least 10 characters');
     });
@@ -288,7 +288,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_SECRET = 'q'.repeat(32);
       process.env.ENCRYPTION_KEY = 'r'.repeat(32);
       process.env.GEMINI_API_KEY = 's'.repeat(10);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -302,7 +302,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 't'.repeat(32);
       process.env.ENCRYPTION_KEY = 'u'.repeat(32);
-      process.env.NODE_ENV = 'invalid';
+      (process.env as any).NODE_ENV = 'invalid';
 
       expect(() => require('../env')).toThrow();
     });
@@ -312,7 +312,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'v'.repeat(32);
       process.env.ENCRYPTION_KEY = 'w'.repeat(32);
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       const { env } = require('../env');
 
@@ -324,7 +324,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'x'.repeat(32);
       process.env.ENCRYPTION_KEY = 'y'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { env } = require('../env');
 
@@ -340,7 +340,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'z'.repeat(32);
       process.env.ENCRYPTION_KEY = 'a'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { validateEnv } = require('../env');
       validateEnv();
@@ -354,7 +354,7 @@ describe('Environment Variables', () => {
       process.env.NEXTAUTH_URL = 'http://localhost:3000';
       process.env.NEXTAUTH_SECRET = 'b'.repeat(32);
       process.env.ENCRYPTION_KEY = 'c'.repeat(32);
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const { validateEnv } = require('../env');
 

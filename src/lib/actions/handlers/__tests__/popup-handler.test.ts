@@ -11,7 +11,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 
@@ -39,7 +43,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 
@@ -67,13 +75,17 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 
       const buttons = [
-        { label: 'Cancel', action: { type: 'navigate' as const, target: 'home' } },
-        { label: 'Confirm', action: { type: 'submit' as const, target: '/api/confirm' } },
+        { text: 'Cancel', action: { type: 'navigate' as const, target: 'home' } },
+        { text: 'Confirm', action: { type: 'submit' as const, target: 'database' as const, table: 'items' } },
       ];
 
       const action: Extract<UIAction, { type: 'popup' }> = {
@@ -100,7 +112,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
+        handleAction: jest.fn(),
         setPopup: undefined,
       };
 
@@ -121,7 +137,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 
@@ -148,7 +168,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 
@@ -178,7 +202,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 
@@ -205,7 +233,11 @@ describe('Popup Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
         setPopup: mockSetPopup,
       };
 

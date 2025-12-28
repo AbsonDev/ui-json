@@ -200,44 +200,44 @@ describe('Analytics Events', () => {
     it('should track checkout started', () => {
       trackCheckoutStarted({
         planTier: 'PRO',
-        interval: 'month',
-        priceId: 'price_123',
-        amount: 2900,
+        interval: 'monthly',
+        price: 2900,
+        source: 'web',
       });
 
       expect(mockTrackEvent).toHaveBeenCalledWith('Checkout_Started', {
         planTier: 'PRO',
-        interval: 'month',
-        priceId: 'price_123',
-        amount: 2900,
+        interval: 'monthly',
+        price: 2900,
+        source: 'web',
       });
     });
 
     it('should track checkout completed', () => {
       trackCheckoutCompleted({
         planTier: 'PRO',
-        interval: 'month',
+        interval: 'monthly',
         amount: 2900,
-        subscriptionId: 'sub_123',
+        customerId: 'cus_123',
       });
 
       expect(mockTrackEvent).toHaveBeenCalledWith('Checkout_Completed', {
         planTier: 'PRO',
-        interval: 'month',
+        interval: 'monthly',
         amount: 2900,
-        subscriptionId: 'sub_123',
+        customerId: 'cus_123',
       });
     });
 
     it('should track checkout abandoned', () => {
       trackCheckoutAbandoned({
         planTier: 'PRO',
-        atStep: 'payment-details',
+        interval: 'monthly',
       });
 
       expect(mockTrackEvent).toHaveBeenCalledWith('Checkout_Abandoned', {
         planTier: 'PRO',
-        atStep: 'payment-details',
+        interval: 'monthly',
       });
     });
 

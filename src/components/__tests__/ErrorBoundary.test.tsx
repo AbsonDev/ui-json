@@ -287,11 +287,11 @@ describe('ErrorBoundary', () => {
     const originalNodeEnv = process.env.NODE_ENV;
 
     afterEach(() => {
-      process.env.NODE_ENV = originalNodeEnv;
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
     });
 
     it('should show error details in development mode', () => {
-      process.env.NODE_ENV = 'development';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
 
       render(
         <ErrorBoundary>
@@ -303,7 +303,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('should hide error details in production mode', () => {
-      process.env.NODE_ENV = 'production';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
 
       render(
         <ErrorBoundary>
@@ -315,7 +315,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('should display error message in details', () => {
-      process.env.NODE_ENV = 'development';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
       const errorMessage = 'Detailed error message';
 
       render(
@@ -331,7 +331,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('should display component stack in details', () => {
-      process.env.NODE_ENV = 'development';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
 
       const { container } = render(
         <ErrorBoundary>

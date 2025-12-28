@@ -117,7 +117,7 @@ describe('JSON Validation Utils', () => {
     });
 
     it('should return fallback for incomplete JSON', () => {
-      const fallback = [];
+      const fallback: any[] = [];
       const result = parseJsonWithFallback('{"key":', fallback);
       expect(result).toBe(fallback);
     });

@@ -39,12 +39,12 @@ describe('Console Override', () => {
   afterEach(() => {
     // Always restore console after each test
     restoreConsole();
-    process.env.NODE_ENV = originalEnv;
+    (process.env as any).NODE_ENV = originalEnv;
   });
 
   describe('overrideConsole', () => {
     it('should override console methods in production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const originalLog = console.log;
       overrideConsole();
@@ -57,7 +57,7 @@ describe('Console Override', () => {
     });
 
     it('should not override console methods in development', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
 
       const originalLog = console.log;
       overrideConsole();
@@ -66,7 +66,7 @@ describe('Console Override', () => {
     });
 
     it('should not override console methods in test environment', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const originalLog = console.log;
       overrideConsole();
@@ -75,7 +75,7 @@ describe('Console Override', () => {
     });
 
     it('should log success message when overriding in production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       overrideConsole();
 
@@ -86,7 +86,7 @@ describe('Console Override', () => {
 
     describe('Console.log Override', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        (process.env as any).NODE_ENV = 'production';
         overrideConsole();
       });
 
@@ -124,7 +124,7 @@ describe('Console Override', () => {
 
     describe('Console.error Override', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        (process.env as any).NODE_ENV = 'production';
         overrideConsole();
       });
 
@@ -157,7 +157,7 @@ describe('Console Override', () => {
 
     describe('Console.warn Override', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        (process.env as any).NODE_ENV = 'production';
         overrideConsole();
       });
 
@@ -176,7 +176,7 @@ describe('Console Override', () => {
 
     describe('Console.info Override', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        (process.env as any).NODE_ENV = 'production';
         overrideConsole();
       });
 
@@ -195,7 +195,7 @@ describe('Console Override', () => {
 
     describe('Console.debug Override', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        (process.env as any).NODE_ENV = 'production';
         overrideConsole();
       });
 
@@ -215,7 +215,7 @@ describe('Console Override', () => {
 
   describe('restoreConsole', () => {
     it('should restore original console methods', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       // Console is overridden
@@ -236,7 +236,7 @@ describe('Console Override', () => {
     });
 
     it('should allow multiple restore calls', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       restoreConsole();
@@ -247,7 +247,7 @@ describe('Console Override', () => {
     });
 
     it('should restore functionality after override', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       // While overridden, logger is used
@@ -297,7 +297,7 @@ describe('Console Override', () => {
 
   describe('Integration', () => {
     it('should allow override -> restore -> override cycle', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const originalLog = console.log;
 
@@ -321,7 +321,7 @@ describe('Console Override', () => {
     });
 
     it('should handle mixed console calls after override', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       console.log('log message');
@@ -340,7 +340,7 @@ describe('Console Override', () => {
 
   describe('Edge Cases', () => {
     it('should handle null arguments', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       // Clear the override success message
@@ -353,7 +353,7 @@ describe('Console Override', () => {
     });
 
     it('should handle undefined arguments', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       // Clear the override success message
@@ -366,7 +366,7 @@ describe('Console Override', () => {
     });
 
     it('should handle boolean arguments', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       console.log(true, false);
@@ -375,7 +375,7 @@ describe('Console Override', () => {
     });
 
     it('should handle array arguments', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       console.log([1, 2, 3]);
@@ -384,7 +384,7 @@ describe('Console Override', () => {
     });
 
     it('should handle very long messages', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       const longMessage = 'a'.repeat(10000);
@@ -394,7 +394,7 @@ describe('Console Override', () => {
     });
 
     it('should handle special characters', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       overrideConsole();
 
       console.log('Special: \n\t\r"\'\\');

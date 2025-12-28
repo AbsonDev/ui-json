@@ -19,9 +19,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -59,9 +61,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -92,9 +96,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -125,9 +131,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -158,9 +166,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -187,9 +197,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -229,9 +241,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -269,9 +283,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -306,9 +322,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {
@@ -338,9 +356,11 @@ describe('Database Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
         currentDbData,
         setCurrentDbData: mockSetCurrentDbData,
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'deleteRecord' }> = {

@@ -7,12 +7,8 @@ import { NextResponse } from 'next/server';
 import { GET } from '../route';
 
 // Mock dependencies
-jest.mock('next-auth', () => ({
-  getServerSession: jest.fn(),
-}));
-
-jest.mock('../../auth/[...nextauth]/route', () => ({
-  authOptions: {},
+jest.mock('@/lib/auth', () => ({
+  auth: jest.fn(),
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -23,11 +19,12 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-import { getServerSession } from 'next-auth';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Session } from 'next-auth';
 
-const mockGetServerSession = getServerSession as jest.MockedFunction<
-  typeof getServerSession
+const mockAuth = auth as unknown as jest.MockedFunction<
+  () => Promise<Session | null>
 >;
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
@@ -38,7 +35,7 @@ describe('GET /api/subscription', () => {
 
   describe('Authentication', () => {
     it('should return 401 when no session', async () => {
-      mockGetServerSession.mockResolvedValue(null);
+      mockAuth.mockResolvedValue(null);
 
       const response = await GET();
       const data = await response.json();
@@ -48,7 +45,7 @@ describe('GET /api/subscription', () => {
     });
 
     it('should return 401 when session has no user', async () => {
-      mockGetServerSession.mockResolvedValue({} as any);
+      mockAuth.mockResolvedValue({} as any);
 
       const response = await GET();
       const data = await response.json();
@@ -58,7 +55,7 @@ describe('GET /api/subscription', () => {
     });
 
     it('should return 401 when session user has no email', async () => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: {},
       } as any);
 
@@ -70,7 +67,7 @@ describe('GET /api/subscription', () => {
     });
 
     it('should not query database when not authenticated', async () => {
-      mockGetServerSession.mockResolvedValue(null);
+      mockAuth.mockResolvedValue(null);
 
       await GET();
 
@@ -80,7 +77,7 @@ describe('GET /api/subscription', () => {
 
   describe('User Not Found', () => {
     beforeEach(() => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'test@example.com' },
       } as any);
     });
@@ -119,7 +116,7 @@ describe('GET /api/subscription', () => {
 
   describe('FREE Plan (No Subscription)', () => {
     beforeEach(() => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'free@example.com' },
       } as any);
     });
@@ -181,7 +178,7 @@ describe('GET /api/subscription', () => {
 
   describe('Active Subscription', () => {
     beforeEach(() => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'pro@example.com' },
       } as any);
     });
@@ -345,7 +342,7 @@ describe('GET /api/subscription', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'test@example.com' },
       } as any);
     });
@@ -386,7 +383,7 @@ describe('GET /api/subscription', () => {
 
   describe('Query Filtering', () => {
     beforeEach(() => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'test@example.com' },
       } as any);
     });
@@ -493,7 +490,7 @@ describe('GET /api/subscription', () => {
 
   describe('Edge Cases', () => {
     it('should handle different email formats', async () => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'user+test@example.co.uk' },
       } as any);
 
@@ -583,7 +580,7 @@ describe('GET /api/subscription', () => {
 
   describe('Integration Scenarios', () => {
     it('should handle complete flow for PRO user', async () => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'pro@example.com' },
       } as any);
 
@@ -612,12 +609,12 @@ describe('GET /api/subscription', () => {
       expect(data.planTier).toBe('PRO');
       expect(data.status).toBe('ACTIVE');
       expect(data.amount).toBe(2900);
-      expect(mockGetServerSession).toHaveBeenCalled();
+      expect(mockAuth).toHaveBeenCalled();
       expect(mockPrisma.user.findUnique).toHaveBeenCalled();
     });
 
     it('should handle complete flow for FREE user', async () => {
-      mockGetServerSession.mockResolvedValue({
+      mockAuth.mockResolvedValue({
         user: { email: 'free@example.com' },
       } as any);
 

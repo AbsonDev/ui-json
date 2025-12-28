@@ -12,6 +12,7 @@ global.fetch = jest.fn();
 
 describe('RenderAIChat', () => {
   const defaultProps = {
+    type: 'aichat' as const,
     id: 'chat',
     appId: 'test-app',
     formData: {},
@@ -149,6 +150,7 @@ describe('RenderAIChat', () => {
 
 describe('RenderAIAssistant', () => {
   const defaultProps = {
+    type: 'aiassistant' as const,
     id: 'assistant',
     appId: 'test-app',
     prompt: 'Analyze {{field1}}',
@@ -260,6 +262,7 @@ describe('RenderAIAssistant', () => {
 
 describe('RenderAIAnalyzer', () => {
   const defaultProps = {
+    type: 'aianalyzer' as const,
     id: 'analyzer',
     appId: 'test-app',
     analyzeType: 'sentiment' as const,

@@ -38,11 +38,6 @@ describe('Renderer Component', () => {
     secondaryColor: '#5856D6',
     backgroundColor: '#F2F2F7',
     textColor: '#000000',
-    errorColor: '#FF3B30',
-    successColor: '#34C759',
-    borderRadius: 8,
-    spacing: 16,
-    fontFamily: 'system-ui',
   };
 
   describe('Basic Rendering', () => {

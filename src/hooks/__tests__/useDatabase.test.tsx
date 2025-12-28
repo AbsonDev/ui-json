@@ -234,7 +234,15 @@ describe('useDatabase', () => {
 
   describe('DatabaseContext Default Value', () => {
     it('should have null data as default', () => {
-      expect(DatabaseContext._currentValue).toEqual({ data: null });
+      // Test default value through hook usage without provider
+      // Suppress console.error for this test
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      expect(() => {
+        renderHook(() => useDatabase());
+      }).toThrow('useDatabase must be used within a DatabaseProvider');
+
+      consoleErrorSpy.mockRestore();
     });
   });
 

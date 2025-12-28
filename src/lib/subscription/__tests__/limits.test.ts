@@ -2,15 +2,6 @@
  * @jest-environment node
  */
 
-// Mock @prisma/client BEFORE any imports
-jest.mock('@prisma/client', () => ({
-  PlanTier: {
-    FREE: 'FREE',
-    PRO: 'PRO',
-    TEAM: 'TEAM',
-  },
-}));
-
 // Mock Prisma BEFORE any imports
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -32,8 +23,8 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-import { PlanTier } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { PlanTier } from '../limits';
 import {
   getPlanLimits,
   checkAppLimit,

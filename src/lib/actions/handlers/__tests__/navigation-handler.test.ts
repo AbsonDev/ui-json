@@ -10,7 +10,11 @@ describe('Navigation Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'navigate' }> = {
@@ -30,7 +34,11 @@ describe('Navigation Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const screens = ['profile', 'settings', 'dashboard', 'about'];
@@ -57,7 +65,11 @@ describe('Navigation Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'navigate' }> = {
@@ -76,7 +88,11 @@ describe('Navigation Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'navigate' }> = {
@@ -108,7 +124,11 @@ describe('Navigation Handler', () => {
         },
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'goBack' }> = {
@@ -127,7 +147,11 @@ describe('Navigation Handler', () => {
         uiApp: null,
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'goBack' }> = {
@@ -156,7 +180,11 @@ describe('Navigation Handler', () => {
         },
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'goBack' }> = {
@@ -188,7 +216,11 @@ describe('Navigation Handler', () => {
           },
           formState: {},
           setFormState: jest.fn(),
-          databaseData: null,
+          currentDbData: {},
+          setCurrentDbData: jest.fn(),
+          session: null,
+          setSession: jest.fn(),
+          handleAction: jest.fn(),
         };
 
         const action: Extract<UIAction, { type: 'goBack' }> = {
@@ -218,7 +250,11 @@ describe('Navigation Handler', () => {
         },
         formState: {},
         setFormState: jest.fn(),
-        databaseData: null,
+        currentDbData: {},
+        setCurrentDbData: jest.fn(),
+        handleAction: jest.fn(),
+        session: null,
+        setSession: jest.fn(),
       };
 
       const action: Extract<UIAction, { type: 'goBack' }> = {

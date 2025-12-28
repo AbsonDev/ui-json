@@ -301,7 +301,7 @@ test.describe('API Integration - Unit Tests in Browser', () => {
     `);
 
     // Execute API call
-    const result = await page.evaluate(() => window.testApiCall());
+    const result = await page.evaluate(() => (window as any).testApiCall());
 
     // Verify result
     expect(result).toHaveProperty('success', true);
@@ -326,7 +326,7 @@ test.describe('API Integration - Unit Tests in Browser', () => {
       </html>
     `);
 
-    const result = await page.evaluate(() => window.testNotFound());
+    const result = await page.evaluate(() => (window as any).testNotFound());
 
     expect(result.ok).toBe(false);
     expect(result.status).toBe(404);
@@ -350,7 +350,7 @@ test.describe('API Integration - Unit Tests in Browser', () => {
       </html>
     `);
 
-    const result = await page.evaluate(() => window.testServerError());
+    const result = await page.evaluate(() => (window as any).testServerError());
 
     expect(result.ok).toBe(false);
     expect(result.status).toBe(500);
@@ -386,7 +386,7 @@ test.describe('API Integration - Unit Tests in Browser', () => {
       </html>
     `);
 
-    await page.evaluate(() => window.testHeaders());
+    await page.evaluate(() => (window as any).testHeaders());
 
     expect(capturedHeaders['authorization']).toBe('Bearer token123');
     expect(capturedHeaders['x-custom-header']).toBe('custom-value');
@@ -427,7 +427,7 @@ test.describe('API Integration - Unit Tests in Browser', () => {
       </html>
     `);
 
-    await page.evaluate(() => window.testPostBody());
+    await page.evaluate(() => (window as any).testPostBody());
 
     expect(capturedBody).toEqual({
       firstName: 'John',
@@ -466,7 +466,7 @@ test.describe('API Integration - Unit Tests in Browser', () => {
       </html>
     `);
 
-    await page.evaluate(() => window.testGet());
+    await page.evaluate(() => (window as any).testGet());
 
     expect(capturedMethod).toBe('GET');
     expect(hasBody).toBe(false);

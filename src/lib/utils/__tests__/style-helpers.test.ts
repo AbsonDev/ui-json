@@ -22,7 +22,9 @@ describe('Style Helper Utilities', () => {
 
     it('should return margin styles from component props', () => {
       const component = {
+        id: 'test-1',
         type: 'text' as const,
+        content: 'Test',
         marginTop: 10,
         marginBottom: 20,
         marginLeft: 5,
@@ -41,7 +43,9 @@ describe('Style Helper Utilities', () => {
 
     it('should resolve token references', () => {
       const component = {
+        id: 'test-2',
         type: 'text' as const,
+        content: 'Test',
         marginTop: '$spacing1',
         marginBottom: '$spacing2',
         marginLeft: 10,
@@ -60,7 +64,9 @@ describe('Style Helper Utilities', () => {
 
     it('should keep unresolved tokens as-is', () => {
       const component = {
+        id: 'test-3',
         type: 'text' as const,
+        content: 'Test',
         marginTop: '$unknownToken',
         marginBottom: 10,
       };
@@ -73,7 +79,9 @@ describe('Style Helper Utilities', () => {
 
     it('should handle undefined margins', () => {
       const component = {
+        id: 'test-4',
         type: 'text' as const,
+        content: 'Test',
       };
 
       const result = getMarginStyles(component, {});
@@ -88,7 +96,9 @@ describe('Style Helper Utilities', () => {
 
     it('should handle numeric zero values', () => {
       const component = {
+        id: 'test-5',
         type: 'text' as const,
+        content: 'Test',
         marginTop: 0,
         marginBottom: 0,
         marginLeft: 0,
@@ -107,7 +117,9 @@ describe('Style Helper Utilities', () => {
 
     it('should handle string values', () => {
       const component = {
+        id: 'test-6',
         type: 'text' as const,
+        content: 'Test',
         marginTop: '10px',
         marginBottom: '1rem',
         marginLeft: 'auto',
@@ -508,7 +520,9 @@ describe('Style Helper Utilities', () => {
 
     it('should work with margin styles and padding classes', () => {
       const component = {
+        id: 'test-7',
         type: 'text' as const,
+        content: 'Test',
         marginTop: 10,
         marginBottom: 20,
       };
